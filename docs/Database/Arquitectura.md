@@ -82,7 +82,8 @@ CREATE TABLE "Parkings" (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     latitude TEXT NOT NULL,
-    longitude TEXT NOT NULL
+    longitude TEXT NOT NULL,
+    address TEXT NOT NULL
 );
 
 -- Espacios

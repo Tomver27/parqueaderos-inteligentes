@@ -107,7 +107,7 @@ async function seed() {
   } else {
     const { data, error } = await supabase
       .from("Parkings")
-      .insert({ name: "Centro Comercial Unicentro", latitude: "4.702233388481218", longitude: "-74.04111107855391" })
+      .insert({ name: "Centro Comercial Unicentro", latitude: "4.702233388481218", longitude: "-74.04111107855391", address : "Ak 15 #124-30, Usaquén, Bogotá" })
       .select("id")
       .single();
     if (error) throw new Error(`Parkings: ${error.message}`);
