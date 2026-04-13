@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Menu,
@@ -12,8 +12,10 @@ import {
   Car,
   ChevronRight,
   LogIn,
+  LogOut,
   User,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 const menuItems = [
   {
@@ -37,8 +39,28 @@ const menuItems = [
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [firstName, setFirstName] = useState<string | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch("/api/me")
+      .then((res) => res.json())
+      .then((data: { firstName: string | null }) => {
+        setFirstName(data.firstName);
+      })
+      .catch(() => setFirstName(null));
+  }, [pathname]);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setFirstName(null);
+    setMenuOpen(false);
+    router.push("/");
+    router.refresh();
+  }
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -78,25 +100,39 @@ export default function Navbar() {
             letterSpacing: "-0.02em",
           }}
         >
-          Smart<span style={{ color: "#06b6d4" }}>Park</span>
+          Park<span style={{ color: "#06b6d4" }}>Go</span>
         </span>
       </Link>
 
       {/* Right controls */}
       <div className="flex items-center gap-3" ref={menuRef}>
-        {/* Login button */}
-        <Link
-          href="/login"
-          className="flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all hover:bg-white/10"
-          style={{
-            border: "1px solid rgba(255,255,255,0.15)",
-            background: "rgba(255,255,255,0.06)",
-            color: "#cbd5e1",
-          }}
-        >
-          <User size={15} />
-          <span className="hidden sm:inline">Iniciar sesión</span>
-        </Link>
+        {/* Login button / User greeting */}
+        {firstName ? (
+          <div
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm"
+            style={{
+              border: "1px solid rgba(255,255,255,0.15)",
+              background: "rgba(255,255,255,0.06)",
+              color: "#cbd5e1",
+            }}
+          >
+            <User size={15} />
+            <span className="hidden sm:inline">Bienvenido, {firstName}</span>
+          </div>
+        ) : (
+          <Link
+            href="/login"
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all hover:bg-white/10"
+            style={{
+              border: "1px solid rgba(255,255,255,0.15)",
+              background: "rgba(255,255,255,0.06)",
+              color: "#cbd5e1",
+            }}
+          >
+            <User size={15} />
+            <span className="hidden sm:inline">Iniciar sesión</span>
+          </Link>
+        )}
 
         {/* Hamburger menu */}
         <button
@@ -180,19 +216,35 @@ export default function Navbar() {
                 className="p-4 border-t"
                 style={{ borderColor: "rgba(255,255,255,0.07)" }}
               >
-                <Link
-                  href="/login"
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm transition-all"
-                  style={{
-                    background: "linear-gradient(135deg,#3b82f6,#06b6d4)",
-                    color: "#fff",
-                    fontWeight: 600,
-                  }}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <LogIn size={15} />
-                  Iniciar sesión / Registrarse
-                </Link>
+                {firstName ? (
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm transition-all hover:opacity-90 cursor-pointer"
+                    style={{
+                      background: "rgba(239,68,68,0.15)",
+                      color: "#f87171",
+                      fontWeight: 600,
+                      border: "1px solid rgba(239,68,68,0.25)",
+                    }}
+                  >
+                    <LogOut size={15} />
+                    Cerrar sesión
+                  </button>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm transition-all"
+                    style={{
+                      background: "linear-gradient(135deg,#3b82f6,#06b6d4)",
+                      color: "#fff",
+                      fontWeight: 600,
+                    }}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <LogIn size={15} />
+                    Iniciar sesión / Registrarse
+                  </Link>
+                )}
               </div>
             </motion.div>
           )}

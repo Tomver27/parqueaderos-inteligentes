@@ -2,7 +2,11 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { LogIn } from "lucide-react";
 import { signIn } from "@/lib/actions/auth";
+
+const INPUT_CLASS =
+  "rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-all placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/40";
 
 export default function LoginForm() {
   const [state, action, pending] = useActionState(signIn, undefined);
@@ -10,13 +14,16 @@ export default function LoginForm() {
   return (
     <form action={action} className="flex flex-col gap-4">
       {state && "error" in state && (
-        <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
+        <p
+          className="rounded-lg px-4 py-2 text-sm"
+          style={{ background: "rgba(239,68,68,0.15)", color: "#f87171" }}
+        >
           {state.error}
         </p>
       )}
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="email" className="text-sm font-medium text-zinc-700">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="email" className="text-sm" style={{ color: "#94a3b8", fontWeight: 500 }}>
           Correo electrónico
         </label>
         <input
@@ -25,12 +32,16 @@ export default function LoginForm() {
           type="email"
           required
           placeholder="correo@ejemplo.com"
-          className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200"
+          className={INPUT_CLASS}
+          style={{
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.1)",
+          }}
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="password" className="text-sm font-medium text-zinc-700">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="password" className="text-sm" style={{ color: "#94a3b8", fontWeight: 500 }}>
           Contraseña
         </label>
         <input
@@ -39,21 +50,30 @@ export default function LoginForm() {
           type="password"
           required
           placeholder="••••••••"
-          className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200"
+          className={INPUT_CLASS}
+          style={{
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.1)",
+          }}
         />
       </div>
 
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:opacity-50"
+        className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm text-white transition-all hover:opacity-90 disabled:opacity-50"
+        style={{
+          background: "linear-gradient(135deg, #3b82f6, #06b6d4)",
+          fontWeight: 600,
+        }}
       >
+        <LogIn size={16} />
         {pending ? "Ingresando..." : "Ingresar"}
       </button>
 
-      <p className="text-center text-sm text-zinc-500">
+      <p className="text-center text-sm" style={{ color: "#64748b" }}>
         ¿No tienes cuenta?{" "}
-        <Link href="/register" className="font-medium text-zinc-900 underline">
+        <Link href="/register" className="underline" style={{ color: "#60a5fa", fontWeight: 500 }}>
           Regístrate
         </Link>
       </p>
