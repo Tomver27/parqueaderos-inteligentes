@@ -1,11 +1,11 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/actions/auth";
 import ParkingList from "@/components/parkings/ParkingList";
 import ParkingMapWrapper from "@/components/map/ParkingMapWrapper";
 import type { Parking } from "@/types";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data: parkings, error } = await supabase
     .from("Parkings")
     .select("id, name, latitude, longitude, address")
