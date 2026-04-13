@@ -32,15 +32,24 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/register");
+  const isPublicRoute =
+    pathname === "/" ||
+    pathname.startsWith("/parqueaderos") ||
+    pathname.startsWith("/reservar") ||
+    pathname.startsWith("/api/sensors");
 
-  // Sin sesión → redirigir a login (excepto si ya está en ruta de auth)
-  if (!user && !isAuthRoute) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  // Public routes — allow without session
+  if (isPublicRoute || isAuthRoute) {
+    // If logged in and trying to access auth pages, redirect to home
+    if (user && isAuthRoute) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+    return response;
   }
 
-  // Con sesión → redirigir al dashboard si intenta ir a login/register
-  if (user && isAuthRoute) {
-    return NextResponse.redirect(new URL("/", request.url));
+  // Protected routes — redirect to login if no session
+  if (!user) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return response;

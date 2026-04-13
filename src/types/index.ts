@@ -13,6 +13,11 @@ export type Space = {
   id_typev: number;
 };
 
+export type ParkingWithSpaces = Parking & {
+  totalSpots: number;
+  spaces: Space[];
+};
+
 export type DocumentType = {
   id: number;
   name: string;
