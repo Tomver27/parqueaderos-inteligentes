@@ -8,15 +8,19 @@ export async function GET() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ firstName: null });
+    return NextResponse.json({ firstName: null, role: null });
   }
 
   const admin = createAdminClient();
   const { data } = await admin
     .from("Users")
-    .select("first_name")
+    .select("first_name, id_role, Roles ( name )")
     .eq("email", user.email!)
     .single();
 
-  return NextResponse.json({ firstName: data?.first_name ?? null });
+  return NextResponse.json({
+    firstName: data?.first_name ?? null,
+    role: (data as any)?.Roles?.name ?? null,
+    roleId: data?.id_role ?? null,
+  });
 }

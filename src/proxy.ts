@@ -1,5 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
+
+// Role IDs matching the Roles table
+const ROLE_ADMIN = 1;
+const ROLE_OPERADOR = 2;
+const ROLE_CONDUCTOR = 3;
+
+// Maps route prefix → allowed role ID
+const ROLE_ROUTES: Record<string, number> = {
+  "/admin": ROLE_ADMIN,
+  "/operador": ROLE_OPERADOR,
+  "/conductor": ROLE_CONDUCTOR,
+};
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -31,7 +44,8 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/register");
+  const isAuthRoute =
+    pathname.startsWith("/login") || pathname.startsWith("/register");
   const isPublicRoute =
     pathname === "/" ||
     pathname.startsWith("/parqueaderos") ||
@@ -40,7 +54,6 @@ export async function proxy(request: NextRequest) {
 
   // Public routes — allow without session
   if (isPublicRoute || isAuthRoute) {
-    // If logged in and trying to access auth pages, redirect to home
     if (user && isAuthRoute) {
       return NextResponse.redirect(new URL("/", request.url));
     }
@@ -50,6 +63,31 @@ export async function proxy(request: NextRequest) {
   // Protected routes — redirect to login if no session
   if (!user) {
     return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // Role-based route protection
+  const roleEntry = Object.entries(ROLE_ROUTES).find(([prefix]) =>
+    pathname.startsWith(prefix)
+  );
+
+  if (roleEntry) {
+    const [, requiredRole] = roleEntry;
+
+    const adminClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { data: userData } = await adminClient
+      .from("Users")
+      .select("id_role")
+      .eq("email", user.email!)
+      .single();
+
+    if (!userData || userData.id_role !== requiredRole) {
+      // Redirect to home if the user doesn't have the required role
+      return NextResponse.redirect(new URL("/", request.url));
+    }
   }
 
   return response;

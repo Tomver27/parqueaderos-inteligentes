@@ -14,8 +14,15 @@ import {
   LogIn,
   LogOut,
   User,
+  LayoutDashboard,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+
+const ROLE_PANEL_MAP: Record<string, { href: string; label: string }> = {
+  Administrador: { href: "/admin", label: "Panel Admin" },
+  Operador: { href: "/operador", label: "Panel Operador" },
+  Conductor: { href: "/conductor", label: "Mi Panel" },
+};
 
 const menuItems = [
   {
@@ -40,6 +47,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [firstName, setFirstName] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -47,16 +55,21 @@ export default function Navbar() {
   useEffect(() => {
     fetch("/api/me")
       .then((res) => res.json())
-      .then((data: { firstName: string | null }) => {
+      .then((data: { firstName: string | null; role: string | null }) => {
         setFirstName(data.firstName);
+        setRole(data.role);
       })
-      .catch(() => setFirstName(null));
+      .catch(() => {
+        setFirstName(null);
+        setRole(null);
+      });
   }, [pathname]);
 
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
     setFirstName(null);
+    setRole(null);
     setMenuOpen(false);
     router.push("/");
     router.refresh();
@@ -212,6 +225,31 @@ export default function Navbar() {
                   </Link>
                 );
               })}
+              {/* Panel link based on role */}
+              {role && ROLE_PANEL_MAP[role] && (
+                <Link
+                  href={ROLE_PANEL_MAP[role].href}
+                  onClick={() => setMenuOpen(false)}
+                  className="w-full flex items-center gap-4 px-5 py-4 text-left transition-all group hover:bg-white/5"
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-amber-500 to-orange-500">
+                    <LayoutDashboard size={18} className="text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm" style={{ fontWeight: 600 }}>
+                      {ROLE_PANEL_MAP[role].label}
+                    </p>
+                    <p className="text-xs mt-0.5 truncate" style={{ color: "#64748b" }}>
+                      Accede a tu panel de gestión
+                    </p>
+                  </div>
+                  <ChevronRight
+                    size={16}
+                    style={{ color: "#475569" }}
+                    className="group-hover:text-white transition-colors"
+                  />
+                </Link>
+              )}
               <div
                 className="p-4 border-t"
                 style={{ borderColor: "rgba(255,255,255,0.07)" }}
