@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Wifi, MapPin } from "lucide-react";
+import type { ParkingStats } from "@/lib/queries/stats";
 
 const PARKING_IMG =
   "https://images.unsplash.com/photo-1628620600676-4a3481c08021?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1cmJhbiUyMHBhcmtpbmclMjBsb3QlMjBtb2Rlcm4lMjBjaXR5fGVufDF8fHx8MTc3Mjg5OTE1M3ww&ixlib=rb-4.1.0&q=80&w=1080";
@@ -35,7 +36,7 @@ function CalendarCheck({
   );
 }
 
-export default function HeroSection() {
+export default function HeroSection({ stats }: { stats: ParkingStats }) {
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background effects */}
@@ -131,9 +132,9 @@ export default function HeroSection() {
 
           <div className="mt-10 flex items-center gap-6">
             {[
-              { label: "Plazas monitoreadas", val: "500+" },
-              { label: "Parqueaderos activos", val: "12" },
-              { label: "Reservas hoy", val: "84" },
+              { label: "Parqueaderos monitoreados", val: String(stats.totalParkings) },
+              { label: "Espacios libres", val: String(stats.freeSpaces) },
+              { label: "Reservas hoy", val: String(stats.reservationsToday) },
             ].map((s) => (
               <div key={s.label}>
                 <p
