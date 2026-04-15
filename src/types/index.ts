@@ -40,3 +40,10 @@ export type InviteState =
   | { error: string }
   | { success: true; email: string }
   | undefined;
+
+export type UpdateParamsState = { error: string } | { success: true } | undefined;
+
+export type CreateReservaState =
+  | { error: string }
+  | { success: true; reservationId: number }
+  | undefined;

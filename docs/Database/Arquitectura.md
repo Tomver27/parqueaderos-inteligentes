@@ -21,8 +21,18 @@ La base de datos se divide en las siguientes áreas lógicas:
 - **TypeVehicles**: Categorización (Carro, Moto, etc.).
 - **Vehicle**: Registro de vehículos y su relación con dueños.
 - **Reservations**: Control de apartados de cupos. Solo aplica para espacios con `bookable = true`.
-- **Payments**: Gestión de transacciones y estados de pago.
+- **Payments**: Gestión de transacciones y estados de pago. Se crea un registro por cada reserva con estado por defecto `"Pagado"`, moneda (`COP`/`USD`) y monto igual al `cost_reservation` del parqueadero.
 - **Occupations**: Seguimiento en tiempo real de la entrada y salida de vehículos. Aplica para **todos** los espacios (bookable y no bookable). Para espacios no reservables (`bookable = false`), `Occupations` es la única fuente de estado.
+
+### Reglas de negocio para Reservas
+
+Al crear una reserva desde el panel del operador se aplican las siguientes validaciones:
+
+1. **Espacio reservable**: El espacio seleccionado debe tener `bookable = true`.
+2. **Reserva vigente**: Si ya existe una reserva no expirada (`expires_at >= NOW()`) para el mismo espacio, se rechaza la nueva reserva.
+3. **Reserva + Ocupación (mismo vehículo)**: Si existe una reserva **y** una ocupación activa (`end_date IS NULL`) con el mismo `id_car` para el espacio, se considera que el espacio está en uso para ese día. Si la nueva reserva es para **otro día**, se permite; si es para el **mismo día**, se rechaza.
+4. **Expiración automática**: `expires_at = date + expires_reservation` (en minutos, según `Parameters`).
+5. **Pago vinculado**: Al crear la reserva se genera automáticamente un registro en `Payments` con `status = 'Pagado'`, `amount = cost_reservation`, `currency` elegido por el operador, e `idempotency_key` único (UUID v4).
 
 ---
 

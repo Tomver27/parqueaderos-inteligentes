@@ -12,7 +12,7 @@ type Params = {
   fee: number;
 };
 
-type UpdateParamsState = { error: string } | { success: true } | undefined;
+import type { UpdateParamsState } from "@/types";
 
 const INPUT_CLASS =
   "w-full rounded-lg px-3 py-2 text-sm text-white outline-none transition-all focus:ring-2 focus:ring-violet-500/40";
