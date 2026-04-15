@@ -115,19 +115,7 @@ export default function HeroSection({ stats }: { stats: ParkingStats }) {
             >
               <MapPin size={18} />
               Ver parqueaderos cercanos
-            </Link>
-            <Link
-              href="/reservar"
-              className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all hover:bg-white/10"
-              style={{
-                border: "1px solid rgba(255,255,255,0.2)",
-                fontWeight: 600,
-                color: "#e2e8f0",
-              }}
-            >
-              <CalendarCheck size={18} />
-              Reservar un puesto
-            </Link>
+            </Link>            
           </div>
 
           <div className="mt-10 flex items-center gap-6">

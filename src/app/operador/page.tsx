@@ -1,5 +1,6 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
-import { ParkingSquare, CalendarCheck, TrendingUp, Clock } from "lucide-react";
+import { ParkingSquare, CalendarCheck, TrendingUp, Clock, Settings } from "lucide-react";
+import EditParametersForm from "@/components/operador/EditParametersForm";
 
 async function getOperadorStats(email: string) {
   const admin = createAdminClient();
@@ -88,6 +89,34 @@ async function getOccupations(email: string) {
   return data ?? [];
 }
 
+async function getParameters(email: string) {
+  const admin = createAdminClient();
+
+  const { data: user } = await admin
+    .from("Users")
+    .select("id")
+    .eq("email", email)
+    .single();
+  if (!user) return null;
+
+  const { data: assignments } = await admin
+    .from("ParkingOperators")
+    .select("id_parking")
+    .eq("id_user", user.id);
+
+  const parkingIds = assignments?.map((a) => a.id_parking) ?? [];
+  if (parkingIds.length === 0) return null;
+
+  const { data } = await admin
+    .from("Parameters")
+    .select("id_parking, expires_reservation, deadline_reservation, cost_reservation, fee")
+    .in("id_parking", parkingIds)
+    .limit(1)
+    .single();
+
+  return data;
+}
+
 export default async function OperadorDashboardPage() {
   const supabase = await createClient();
   const {
@@ -98,8 +127,11 @@ export default async function OperadorDashboardPage() {
     return <p className="text-slate-400">No se pudo obtener la sesión.</p>;
   }
 
-  const stats = await getOperadorStats(user.email);
-  const occupations = await getOccupations(user.email);
+  const [stats, occupations, params] = await Promise.all([
+    getOperadorStats(user.email),
+    getOccupations(user.email),
+    getParameters(user.email),
+  ]);
 
   if (!stats) {
     return <p className="text-slate-400">Operador no encontrado.</p>;
@@ -228,6 +260,22 @@ export default async function OperadorDashboardPage() {
           <div className="rounded-xl border border-white/[0.07] bg-[#0f172a] p-8 text-center">
             <Clock size={28} className="mx-auto mb-2 text-slate-600" />
             <p className="text-slate-400 text-sm">No hay ocupaciones registradas</p>
+          </div>
+        )}
+      </div>
+
+      {/* Parameters */}
+      <div className="mt-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Settings size={18} className="text-slate-400" />
+          <h2 className="text-lg font-semibold">Parámetros vigentes</h2>
+        </div>
+        {params ? (
+          <EditParametersForm params={params} />
+        ) : (
+          <div className="rounded-xl border border-white/[0.07] bg-[#0f172a] p-8 text-center">
+            <Settings size={28} className="mx-auto mb-2 text-slate-600" />
+            <p className="text-slate-400 text-sm">Sin parámetros configurados</p>
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { Settings } from "lucide-react";
+import EditParametersForm from "@/components/operador/EditParametersForm";
 
 async function getOperadorConfig(email: string) {
   const admin = createAdminClient();
@@ -20,7 +21,7 @@ async function getOperadorConfig(email: string) {
 
   const { data: params } = await admin
     .from("Parameters")
-    .select("*, Parkings ( name )")
+    .select("id_parking, expires_reservation, deadline_reservation, cost_reservation, fee, Parkings ( name )")
     .in("id_parking", parkingIds)
     .limit(1)
     .single();
@@ -44,28 +45,11 @@ export default async function OperadorConfiguracionPage() {
       </p>
 
       {config ? (
-        <div className="rounded-xl border border-white/[0.07] bg-[#0f172a] p-6 max-w-lg">
+        <div>
           <h3 className="font-semibold mb-4">
             {(config as any).Parkings?.name ?? "Parqueadero"}
           </h3>
-          <div className="space-y-4 text-sm">
-            <div className="flex justify-between">
-              <span className="text-slate-400">Expiración de reserva</span>
-              <span>{config.expires_reservation} min</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Límite de reserva</span>
-              <span>{config.deadline_reservation} min</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Costo de reserva</span>
-              <span>${Number(config.cost_reservation).toLocaleString("es-CO")}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">Tarifa</span>
-              <span>${Number(config.fee).toLocaleString("es-CO")}</span>
-            </div>
-          </div>
+          <EditParametersForm params={config} />
         </div>
       ) : (
         <div className="rounded-xl border border-white/[0.07] bg-[#0f172a] p-12 text-center">
