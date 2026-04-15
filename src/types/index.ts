@@ -9,6 +9,7 @@ export type Parking = {
 export type Space = {
   id: number;
   name: string;
+  bookable: boolean;
   id_parking: number;
   id_typev: number;
 };
