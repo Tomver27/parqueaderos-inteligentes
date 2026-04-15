@@ -20,11 +20,23 @@ async function getOperadorSpaces(email: string) {
 
   const { data: spaces } = await admin
     .from("Spaces")
-    .select("id, name, id_parking, id_typev, Parkings ( name ), TypeVehicles ( name )")
+    .select("id, name, bookable, id_parking, id_typev, Parkings ( name ), TypeVehicles ( name )")
     .in("id_parking", parkingIds)
     .order("name");
 
-  return spaces ?? [];
+  // Active occupations (end_date IS NULL) for these spaces
+  const spaceIds = spaces?.map((s) => s.id) ?? [];
+  const { data: occupations } = spaceIds.length
+    ? await admin
+        .from("Occupations")
+        .select("id_space")
+        .in("id_space", spaceIds)
+        .is("end_date", null)
+    : { data: [] };
+
+  const occupiedSet = new Set(occupations?.map((o) => o.id_space) ?? []);
+
+  return (spaces ?? []).map((s) => ({ ...s, occupied: occupiedSet.has(s.id) }));
 }
 
 export default async function OperadorEspaciosPage() {
@@ -47,13 +59,40 @@ export default async function OperadorEspaciosPage() {
           {spaces.map((s: any) => (
             <div
               key={s.id}
-              className="rounded-xl border border-white/[0.07] bg-[#0f172a] p-4 text-center"
+              className={`rounded-xl border p-4 text-center ${
+                s.occupied
+                  ? "border-red-500/30 bg-red-950/30"
+                  : "border-white/[0.07] bg-[#0f172a]"
+              }`}
             >
-              <ParkingSquare size={20} className="mx-auto mb-2 text-violet-400" />
+              <ParkingSquare
+                size={20}
+                className={`mx-auto mb-2 ${s.occupied ? "text-red-400" : "text-violet-400"}`}
+              />
               <p className="font-semibold text-sm">{s.name}</p>
               <p className="text-xs text-slate-500 mt-1">
                 {s.TypeVehicles?.name ?? "General"}
               </p>
+              <div className="mt-2 flex flex-col items-center gap-1">
+                <span
+                  className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                    s.bookable
+                      ? "bg-blue-500/15 text-blue-400"
+                      : "bg-amber-500/15 text-amber-400"
+                  }`}
+                >
+                  {s.bookable ? "Reservable" : "Uso libre"}
+                </span>
+                <span
+                  className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                    s.occupied
+                      ? "bg-red-500/15 text-red-400"
+                      : "bg-emerald-500/15 text-emerald-400"
+                  }`}
+                >
+                  {s.occupied ? "Ocupado" : "Disponible"}
+                </span>
+              </div>
             </div>
           ))}
         </div>
