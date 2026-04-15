@@ -37,7 +37,7 @@ El panel de operador vive bajo `/operador` con su propio sidebar (`DashboardSide
 | Ruta | Sección | Descripción |
 |---|---|---|
 | `/operador` | Dashboard | Métricas del parqueadero asignado (espacios, ocupados, reservas hoy) |
-| `/operador/espacios` | Espacios | Listado de espacios del parqueadero con tipo de vehículo |
+| `/operador/espacios` | Espacios | Listado de espacios del parqueadero con tipo de vehículo y estado `bookable` (reservable / uso libre) |
 | `/operador/reservas` | Reservas | Reservas de los espacios del parqueadero |
 | `/operador/ingresos` | Ingresos | Placeholder — resumen financiero (por implementar) |
 | `/operador/configuracion` | Configuración | Parámetros operativos del parqueadero (lectura) |
@@ -48,6 +48,7 @@ El panel de operador vive bajo `/operador` con su propio sidebar (`DashboardSide
 |---|---|
 | Editar configuración | Modificar horarios, tolerancia de llegada y tarifas |
 | Marcar espacios fuera de servicio | Toggle de estado en la tabla `Spaces` |
+| Toggle bookable | Cambiar `bookable` de un espacio (reservable ↔ uso libre) |
 | Marcar reservas como no-presentada | Cambiar estado de reserva tras tolerancia expirada |
 | Finalizar reserva manualmente | Para conductores que olvidan registrar salida |
 | Gráficas de ocupación | Ocupación por hora, reservas de últimos 7 días |
@@ -67,8 +68,10 @@ El dashboard muestra métricas del parqueadero asignado al operador. El flujo es
 | Métrica | Consulta (filtrada por parkingIds) |
 |---|---|
 | Espacios totales | `count(*) FROM "Spaces" WHERE id_parking IN (parkingIds)` |
-| Ocupados ahora | `count(*) FROM "Occupations" WHERE end_date IS NULL` (con join a Spaces del parqueadero) |
-| Reservas hoy | `count(*) FROM "Reservations"` (con join a Spaces del parqueadero, filtro fecha hoy) |
+| Reservables | `count(*) FROM "Spaces" WHERE id_parking IN (parkingIds) AND bookable = true` |
+| Uso libre | `count(*) FROM "Spaces" WHERE id_parking IN (parkingIds) AND bookable = false` |
+| Ocupados ahora | `count(*) FROM "Occupations" WHERE end_date IS NULL` (join a Spaces del parqueadero — incluye todos los espacios) |
+| Reservas hoy | `count(*) FROM "Reservations"` (join a Spaces del parqueadero donde `bookable = true`, filtro fecha hoy) |
 
 ---
 

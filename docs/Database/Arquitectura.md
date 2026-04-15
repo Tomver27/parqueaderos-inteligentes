@@ -13,16 +13,16 @@ La base de datos se divide en las siguientes áreas lógicas:
 
 ### Infraestructura del Parqueadero
 - **Parkings**: Sedes de los estacionamientos.
-- **Spaces**: Plazas o espacios individuales dentro de cada sede.
+- **Spaces**: Plazas o espacios individuales dentro de cada sede. Cada espacio tiene un atributo `bookable` que determina si es reservable por la web (`true`) o si es de uso libre/primer llegado (`false`).
 - **Parameters**: Configuración de reglas de negocio y costos por sede.
 - **ParkingOperators**: Relación de empleados asignados a sedes específicas.
 
 ### Operativa y Transaccional
 - **TypeVehicles**: Categorización (Carro, Moto, etc.).
 - **Vehicle**: Registro de vehículos y su relación con dueños.
-- **Reservations**: Control de apartados de cupos.
+- **Reservations**: Control de apartados de cupos. Solo aplica para espacios con `bookable = true`.
 - **Payments**: Gestión de transacciones y estados de pago.
-- **Occupations**: Seguimiento en tiempo real de la entrada y salida de vehículos.
+- **Occupations**: Seguimiento en tiempo real de la entrada y salida de vehículos. Aplica para **todos** los espacios (bookable y no bookable). Para espacios no reservables (`bookable = false`), `Occupations` es la única fuente de estado.
 
 ---
 
@@ -90,6 +90,7 @@ CREATE TABLE "Parkings" (
 CREATE TABLE "Spaces" (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
+    bookable BOOLEAN NOT NULL DEFAULT TRUE,  -- true = reservable por web, false = uso libre (solo Occupations)
     id_parking INTEGER NOT NULL,
     id_typev INTEGER NOT NULL,
 

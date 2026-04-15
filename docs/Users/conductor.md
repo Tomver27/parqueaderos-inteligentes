@@ -131,10 +131,15 @@ CREATE TABLE "Reservations" (
 
 La página `/conductor/reservas` muestra las reservas cuyos `id_car` pertenecen a los vehículos del conductor, con joins a `Spaces`, `Parkings` y `Vehicle`.
 
-### 7.1 Flujo de creación de reserva (planificado)
+### 7.1 Tipos de espacio
+
+- **Reservable** (`bookable = true`): el conductor puede reservarlo desde la web. Aparece en la lista de espacios disponibles y se vincula con `Reservations`.
+- **Uso libre** (`bookable = false`): no es reservable. Cualquier persona puede tomarlo presencialmente. Su estado se conoce únicamente por la tabla `Occupations` (sensores IoT). **Nunca aparece en `Reservations`**.
+
+### 7.2 Flujo de creación de reserva (planificado)
 
 1. Conductor busca parqueadero en `/parqueaderos` (público).
-2. Selecciona espacio disponible + fecha/hora.
+2. Selecciona un espacio **reservable** (`bookable = true`) disponible + fecha/hora.
 3. Selecciona vehículo de los registrados.
 4. Pago via pasarela (por implementar).
 5. Se crea registro en `Reservations` + `Payments`.
@@ -168,7 +173,7 @@ Estas páginas son accesibles sin autenticación pero el conductor las usa para 
 | Ruta | Descripción |
 |---|---|
 | `/` | Landing page con estadísticas generales |
-| `/parqueaderos` | Mapa Leaflet + listado de parqueaderos con espacios disponibles |
+| `/parqueaderos` | Mapa Leaflet + listado de parqueaderos con espacios disponibles (muestra tanto reservables como de uso libre, diferenciados) |
 | `/reservar` | Placeholder — futuro flujo de reserva |
 
 ---

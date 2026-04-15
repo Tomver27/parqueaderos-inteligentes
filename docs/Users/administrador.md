@@ -67,8 +67,8 @@ Métricas calculadas en server component con `createAdminClient()`:
 | Total de parqueaderos | `SELECT count(*) FROM "Parkings"` |
 | Total de conductores | `SELECT count(*) FROM "Users" WHERE id_role = 3` |
 | Total de operadores | `SELECT count(*) FROM "Users" WHERE id_role = 2` |
-| Reservas hoy | `SELECT count(*) FROM "Reservations" WHERE date >= hoy AND date < mañana` |
-| Espacios ocupados ahora | `SELECT count(*) FROM "Occupations" WHERE end_date IS NULL` |
+| Reservas hoy | `SELECT count(*) FROM "Reservations" WHERE date >= hoy AND date < mañana` (solo espacios con `bookable = true`) |
+| Espacios ocupados ahora | `SELECT count(*) FROM "Occupations" WHERE end_date IS NULL` (todos los espacios, bookable y no bookable) |
 
 ---
 
@@ -79,7 +79,7 @@ Todas las consultas del panel admin usan `createAdminClient()` (service role key
 | Tabla | Campos clave |
 |---|---|
 | `Parkings` | id, name, latitude, longitude, address |
-| `Spaces` | id, name, id_parking → `Parkings`, id_typev → `TypeVehicles` |
+| `Spaces` | id, name, **bookable** (bool, default true), id_parking → `Parkings`, id_typev → `TypeVehicles`. `bookable = true` → reservable por web; `bookable = false` → uso libre, solo `Occupations` |
 | `Users` | id, document, first_name, second_name, last_name, email, phone_number, created_at, id_document_type → `DocumentTypes`, id_role → `Roles` |
 | `Roles` | id (1=Administrador, 2=Operador, 3=Conductor), name, description |
 | `DocumentTypes` | id, name, name_normalized (CC, CE, PE) |
