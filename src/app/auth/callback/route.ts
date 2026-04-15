@@ -9,8 +9,12 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Invited users (operators) need to set their password first
+      if (data.user?.user_metadata?.needs_password_setup) {
+        return NextResponse.redirect(`${origin}/set-password`);
+      }
       return NextResponse.redirect(`${origin}/`);
     }
   }

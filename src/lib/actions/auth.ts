@@ -62,3 +62,25 @@ export async function signOut(): Promise<void> {
   await supabase.auth.signOut();
   redirect("/login");
 }
+
+export async function setPassword(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const password = formData.get("password") as string;
+
+  if (!password || password.length < 6) {
+    return { error: "La contraseña debe tener al menos 6 caracteres." };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.updateUser({
+    password,
+    data: { needs_password_setup: null },
+  });
+
+  if (error) return { error: error.message };
+
+  redirect("/");
+}

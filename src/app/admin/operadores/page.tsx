@@ -1,12 +1,18 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { UserCog } from "lucide-react";
+import InviteOperadorForm from "@/components/admin/InviteOperadorForm";
+import ResendInviteButton from "@/components/admin/ResendInviteButton";
 
 export default async function AdminOperadoresPage() {
   const admin = createAdminClient();
-  const { data: operadores } = await admin
-    .from("Users")
-    .select("id, first_name, last_name, email, phone_number")
-    .eq("id_role", 2);
+
+  const [{ data: operadores }, { data: parkings }] = await Promise.all([
+    admin
+      .from("Users")
+      .select("id, first_name, last_name, email, phone_number")
+      .eq("id_role", 2),
+    admin.from("Parkings").select("id, name").order("name"),
+  ]);
 
   return (
     <div>
@@ -19,6 +25,8 @@ export default async function AdminOperadoresPage() {
         </div>
       </div>
 
+      <InviteOperadorForm parkings={parkings ?? []} />
+
       {operadores && operadores.length > 0 ? (
         <div className="rounded-xl border border-white/[0.07] overflow-hidden">
           <table className="w-full text-sm">
@@ -27,6 +35,7 @@ export default async function AdminOperadoresPage() {
                 <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Nombre</th>
                 <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Email</th>
                 <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Teléfono</th>
+                <th className="text-right px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -35,6 +44,9 @@ export default async function AdminOperadoresPage() {
                   <td className="px-4 py-3 font-medium">{op.first_name} {op.last_name}</td>
                   <td className="px-4 py-3 text-slate-400">{op.email}</td>
                   <td className="px-4 py-3 text-slate-400">{op.phone_number}</td>
+                  <td className="px-4 py-3 text-right">
+                    <ResendInviteButton email={op.email} />
+                  </td>
                 </tr>
               ))}
             </tbody>

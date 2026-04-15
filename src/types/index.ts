@@ -35,3 +35,8 @@ export type TypeVehicle = {
   id: number;
   name: string;
 };
+
+export type InviteState =
+  | { error: string }
+  | { success: true; email: string }
+  | undefined;
