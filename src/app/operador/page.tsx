@@ -1,5 +1,5 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
-import { ParkingSquare, CalendarCheck, TrendingUp } from "lucide-react";
+import { ParkingSquare, CalendarCheck, TrendingUp, Clock } from "lucide-react";
 
 async function getOperadorStats(email: string) {
   const admin = createAdminClient();
@@ -52,6 +52,42 @@ async function getOperadorStats(email: string) {
   };
 }
 
+async function getOccupations(email: string) {
+  const admin = createAdminClient();
+
+  const { data: user } = await admin
+    .from("Users")
+    .select("id")
+    .eq("email", email)
+    .single();
+  if (!user) return [];
+
+  const { data: assignments } = await admin
+    .from("ParkingOperators")
+    .select("id_parking")
+    .eq("id_user", user.id);
+
+  const parkingIds = assignments?.map((a) => a.id_parking) ?? [];
+  if (parkingIds.length === 0) return [];
+
+  const { data: spaces } = await admin
+    .from("Spaces")
+    .select("id")
+    .in("id_parking", parkingIds);
+
+  const spaceIds = spaces?.map((s) => s.id) ?? [];
+  if (spaceIds.length === 0) return [];
+
+  const { data } = await admin
+    .from("Occupations")
+    .select("id, start_date, end_date, id_space, Spaces ( name )")
+    .in("id_space", spaceIds)
+    .order("start_date", { ascending: false })
+    .limit(50);
+
+  return data ?? [];
+}
+
 export default async function OperadorDashboardPage() {
   const supabase = await createClient();
   const {
@@ -63,6 +99,7 @@ export default async function OperadorDashboardPage() {
   }
 
   const stats = await getOperadorStats(user.email);
+  const occupations = await getOccupations(user.email);
 
   if (!stats) {
     return <p className="text-slate-400">Operador no encontrado.</p>;
@@ -120,6 +157,79 @@ export default async function OperadorDashboardPage() {
             </div>
           );
         })}
+      </div>
+
+      {/* Occupations history */}
+      <div className="mt-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Clock size={18} className="text-slate-400" />
+          <h2 className="text-lg font-semibold">Historial de ocupaciones</h2>
+        </div>
+        {occupations.length > 0 ? (
+          <div className="rounded-xl border border-white/[0.07] overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/[0.07] bg-white/[0.02]">
+                  <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Espacio</th>
+                  <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Inicio</th>
+                  <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Fin</th>
+                  <th className="text-right px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Duración</th>
+                  <th className="text-center px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {occupations.map((o: any) => {
+                  const start = new Date(o.start_date);
+                  const end = o.end_date ? new Date(o.end_date) : null;
+                  const diffMs = end
+                    ? end.getTime() - start.getTime()
+                    : Date.now() - start.getTime();
+                  const minutes = Math.round(diffMs / 60_000);
+
+                  const fmt = (d: Date) =>
+                    d.toLocaleString("es-CO", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
+
+                  return (
+                    <tr key={o.id} className="border-b border-white/[0.05] hover:bg-white/[0.03]">
+                      <td className="px-4 py-3 font-medium">
+                        {o.Spaces?.name ?? `#${o.id_space}`}
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">{fmt(start)}</td>
+                      <td className="px-4 py-3 text-slate-400">
+                        {end ? fmt(end) : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {minutes} min
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span
+                          className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                            end
+                              ? "bg-emerald-500/15 text-emerald-400"
+                              : "bg-red-500/15 text-red-400"
+                          }`}
+                        >
+                          {end ? "Finalizada" : "En curso"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-white/[0.07] bg-[#0f172a] p-8 text-center">
+            <Clock size={28} className="mx-auto mb-2 text-slate-600" />
+            <p className="text-slate-400 text-sm">No hay ocupaciones registradas</p>
+          </div>
+        )}
       </div>
     </div>
   );
