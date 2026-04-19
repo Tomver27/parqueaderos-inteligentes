@@ -38,7 +38,7 @@ El panel de operador vive bajo `/operador` con su propio sidebar (`DashboardSide
 |---|---|---|
 | `/operador` | Dashboard | Métricas del parqueadero asignado (espacios, ocupados, reservas hoy) |
 | `/operador/espacios` | Espacios | Listado de espacios del parqueadero con tipo de vehículo y estado `bookable` (reservable / uso libre) |
-| `/operador/reservas` | Reservas | Reservas de los espacios del parqueadero |
+| `/operador/reservas` | Reservas | Reservas de los espacios del parqueadero (estados: Vigente, Tomada, Expirada) |
 | `/operador/ingresos` | Ingresos | Placeholder — resumen financiero (por implementar) |
 | `/operador/configuracion` | Configuración | Parámetros operativos del parqueadero (lectura) |
 

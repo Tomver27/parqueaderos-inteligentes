@@ -20,7 +20,7 @@ La base de datos se divide en las siguientes áreas lógicas:
 ### Operativa y Transaccional
 - **TypeVehicles**: Categorización (Carro, Moto, etc.).
 - **Vehicle**: Registro de vehículos y su relación con dueños.
-- **Reservations**: Control de apartados de cupos. Solo aplica para espacios con `bookable = true`.
+- **Reservations**: Control de apartados de cupos. Solo aplica para espacios con `bookable = true`. Incluye el atributo `taken` (`BOOLEAN DEFAULT FALSE`) que indica si el vehículo efectivamente se presentó al parqueadero (detectado por cámara ANPR).
 - **Payments**: Gestión de transacciones y estados de pago. Se crea un registro por cada reserva con estado por defecto `"Pagado"`, moneda (`COP`/`USD`) y monto igual al `cost_reservation` del parqueadero.
 - **Occupations**: Seguimiento en tiempo real de la entrada y salida de vehículos. Aplica para **todos** los espacios (bookable y no bookable). Para espacios no reservables (`bookable = false`), `Occupations` es la única fuente de estado.
 
@@ -33,6 +33,23 @@ Al crear una reserva desde el panel del operador se aplican las siguientes valid
 3. **Reserva + Ocupación (mismo vehículo)**: Si existe una reserva **y** una ocupación activa (`end_date IS NULL`) con el mismo `id_car` para el espacio, se considera que el espacio está en uso para ese día. Si la nueva reserva es para **otro día**, se permite; si es para el **mismo día**, se rechaza.
 4. **Expiración automática**: `expires_at = date + expires_reservation` (en minutos, según `Parameters`).
 5. **Pago vinculado**: Al crear la reserva se genera automáticamente un registro en `Payments` con `status = 'Pagado'`, `amount = cost_reservation`, `currency` elegido por el operador, e `idempotency_key` único (UUID v4).
+
+### Detección de placa y confirmación de reserva (taken)
+
+Cuando la cámara ANPR detecta una placa, el bridge envía un `POST /api/plates` con `{ plate: "ABC123" }`. El endpoint:
+
+1. Busca el vehículo en la tabla `Vehicle` por `plate`.
+2. Busca reservas donde `id_car` coincida, `taken = false` y que estén dentro de la **ventana horaria**: desde 30 minutos antes de `date` hasta `expires_at`.
+3. Si encuentra una reserva válida, actualiza `taken = true`.
+4. Responde con el `reservation_id` y `space_id` para que el bridge pueda informar al sistema.
+
+Estados de una reserva en la tabla:
+
+| Estado | Condición |
+|---|---|
+| **Vigente** | `expires_at >= NOW()` y `taken = false` |
+| **Tomada** | `taken = true` |
+| **Expirada** | `expires_at < NOW()` y `taken = false` |
 
 ---
 
@@ -134,6 +151,7 @@ CREATE TABLE "Reservations" (
     id SERIAL PRIMARY KEY,
     date TIMESTAMP NOT NULL,
     expires_at TIMESTAMP,
+    taken BOOLEAN NOT NULL DEFAULT FALSE,
     id_space INTEGER NOT NULL,
     id_car INTEGER NOT NULL,
 

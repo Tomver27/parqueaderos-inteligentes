@@ -1,6 +1,7 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { CalendarCheck } from "lucide-react";
 import CreateReservaForm from "@/components/operador/CreateReservaForm";
+import { fmtDateTimeCO } from "@/lib/dates";
 
 async function getOperadorParkingIds(email: string) {
   const admin = createAdminClient();
@@ -26,7 +27,7 @@ async function getOperadorReservas(parkingIds: number[]) {
   const { data: reservas } = await admin
     .from("Reservations")
     .select(
-      "id, date, expires_at, Spaces!inner ( name, id_parking ), Vehicle ( plate )",
+      "id, date, expires_at, taken, Spaces!inner ( name, id_parking ), Vehicle ( plate )",
     )
     .in("Spaces.id_parking", parkingIds)
     .order("date", { ascending: false })
@@ -107,6 +108,20 @@ export default async function OperadorReservasPage() {
                   ? new Date(r.expires_at)
                   : null;
                 const expired = expiresAt ? expiresAt < new Date() : false;
+                const taken = !!r.taken;
+
+                let statusLabel: string;
+                let statusClass: string;
+                if (taken) {
+                  statusLabel = "Tomada";
+                  statusClass = "bg-blue-500/15 text-blue-400";
+                } else if (expired) {
+                  statusLabel = "Expirada";
+                  statusClass = "bg-red-500/15 text-red-400";
+                } else {
+                  statusLabel = "Vigente";
+                  statusClass = "bg-emerald-500/15 text-emerald-400";
+                }
 
                 return (
                   <tr
@@ -117,11 +132,11 @@ export default async function OperadorReservasPage() {
                       #{r.id}
                     </td>
                     <td className="px-4 py-3 text-slate-300">
-                      {new Date(r.date).toLocaleString("es-CO")}
+                      {fmtDateTimeCO(new Date(r.date))}
                     </td>
                     <td className="px-4 py-3 text-slate-400">
                       {expiresAt
-                        ? expiresAt.toLocaleString("es-CO")
+                        ? fmtDateTimeCO(expiresAt)
                         : "—"}
                     </td>
                     <td className="px-4 py-3">
@@ -132,13 +147,9 @@ export default async function OperadorReservasPage() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span
-                        className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                          expired
-                            ? "bg-red-500/15 text-red-400"
-                            : "bg-emerald-500/15 text-emerald-400"
-                        }`}
+                        className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${statusClass}`}
                       >
-                        {expired ? "Expirada" : "Vigente"}
+                        {statusLabel}
                       </span>
                     </td>
                   </tr>

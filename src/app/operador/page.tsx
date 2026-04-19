@@ -1,6 +1,7 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { ParkingSquare, CalendarCheck, TrendingUp, Clock, Settings } from "lucide-react";
 import EditParametersForm from "@/components/operador/EditParametersForm";
+import { todayCO, tomorrowCO, fmtDateTimeCO } from "@/lib/dates";
 
 async function getOperadorStats(email: string) {
   const admin = createAdminClient();
@@ -23,8 +24,8 @@ async function getOperadorStats(email: string) {
   if (parkingIds.length === 0)
     return { parkingName: null, espaciosTotal: 0, ocupados: 0, reservasHoy: 0 };
 
-  const today = new Date().toISOString().slice(0, 10);
-  const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+  const today = todayCO();
+  const tomorrow = tomorrowCO();
 
   const [parking, espacios, ocupados, reservas] = await Promise.all([
     admin.from("Parkings").select("name").in("id", parkingIds).limit(1).single(),
@@ -218,14 +219,7 @@ export default async function OperadorDashboardPage() {
                     : Date.now() - start.getTime();
                   const minutes = Math.round(diffMs / 60_000);
 
-                  const fmt = (d: Date) =>
-                    d.toLocaleString("es-CO", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    });
+                  const fmt = (d: Date) => fmtDateTimeCO(d);
 
                   return (
                     <tr key={o.id} className="border-b border-white/[0.05] hover:bg-white/[0.03]">

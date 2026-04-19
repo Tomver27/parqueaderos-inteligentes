@@ -50,7 +50,8 @@ export async function proxy(request: NextRequest) {
     pathname === "/" ||
     pathname.startsWith("/parqueaderos") ||
     pathname.startsWith("/reservar") ||
-    pathname.startsWith("/api/sensors");
+    pathname.startsWith("/api/sensors") ||
+    pathname.startsWith("/api/plates");
 
   // Public routes — allow without session
   if (isPublicRoute || isAuthRoute) {

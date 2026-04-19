@@ -1,5 +1,6 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { UserCircle } from "lucide-react";
+import { fmtDateCO } from "@/lib/dates";
 
 async function getConductorProfile(email: string) {
   const admin = createAdminClient();
@@ -28,7 +29,7 @@ export default async function ConductorPerfilPage() {
     { label: "Email", value: profile.email },
     { label: "Teléfono", value: profile.phone_number },
     { label: "Documento", value: `${(profile as any).DocumentTypes?.name ?? ""} ${profile.document}`.trim() },
-    { label: "Miembro desde", value: new Date(profile.created_at).toLocaleDateString("es-CO") },
+    { label: "Miembro desde", value: fmtDateCO(new Date(profile.created_at)) },
   ];
 
   return (

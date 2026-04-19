@@ -24,7 +24,9 @@ export async function createReserva(
     return { error: "La moneda debe ser COP o USD." };
   }
 
-  const reservationDate = new Date(dateStr);
+  const reservationDate = new Date(
+    dateStr.includes("+") || dateStr.includes("Z") ? dateStr : dateStr + "-05:00",
+  );
   if (isNaN(reservationDate.getTime())) {
     return { error: "Fecha inválida." };
   }

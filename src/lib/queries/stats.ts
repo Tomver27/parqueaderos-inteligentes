@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server";
+import { todayCO, tomorrowCO } from "@/lib/dates";
 
 export type ParkingStats = {
   totalParkings: number;
@@ -9,8 +10,8 @@ export type ParkingStats = {
 export async function getParkingStats(): Promise<ParkingStats> {
   const admin = createAdminClient();
 
-  const today = new Date().toISOString().slice(0, 10);
-  const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+  const today = todayCO();
+  const tomorrow = tomorrowCO();
 
   const [parkingsRes, spacesRes, occupiedRes, reservationsRes] =
     await Promise.all([

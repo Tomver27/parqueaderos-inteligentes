@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { Users } from "lucide-react";
+import { fmtDateCO } from "@/lib/dates";
 
 export default async function AdminConductoresPage() {
   const admin = createAdminClient();
@@ -38,7 +39,7 @@ export default async function AdminConductoresPage() {
                   <td className="px-4 py-3 text-slate-400">{c.email}</td>
                   <td className="px-4 py-3 text-slate-400">{c.phone_number}</td>
                   <td className="px-4 py-3 text-slate-400">
-                    {new Date(c.created_at).toLocaleDateString("es-CO")}
+                    {fmtDateCO(new Date(c.created_at))}
                   </td>
                 </tr>
               ))}

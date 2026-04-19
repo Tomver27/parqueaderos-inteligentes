@@ -1,5 +1,6 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { CalendarCheck } from "lucide-react";
+import { fmtDateTimeCO } from "@/lib/dates";
 
 async function getConductorReservas(email: string) {
   const admin = createAdminClient();
@@ -58,7 +59,7 @@ export default async function ConductorReservasPage() {
               {reservas.map((r: any) => (
                 <tr key={r.id} className="border-b border-white/[0.05] hover:bg-white/[0.03]">
                   <td className="px-4 py-3 text-slate-300">
-                    {new Date(r.date).toLocaleString("es-CO")}
+                    {fmtDateTimeCO(new Date(r.date))}
                   </td>
                   <td className="px-4 py-3">{r.Spaces?.Parkings?.name ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-400">{r.Spaces?.name ?? "—"}</td>

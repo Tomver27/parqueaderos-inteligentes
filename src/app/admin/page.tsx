@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server";
+import { todayCO, tomorrowCO } from "@/lib/dates";
 import {
   Building2,
   Users,
@@ -10,8 +11,8 @@ import {
 async function getAdminStats() {
   const admin = createAdminClient();
 
-  const today = new Date().toISOString().slice(0, 10);
-  const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+  const today = todayCO();
+  const tomorrow = tomorrowCO();
 
   const [parkings, conductores, operadores, reservas, ocupados] =
     await Promise.all([
