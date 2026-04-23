@@ -1,49 +1,129 @@
-import Link from "next/link";
-import { Car, ChevronRight } from "lucide-react";
+import { redirect } from "next/navigation";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
+import ReservarPageClient from "@/components/reservar/ReservarPageClient";
 
-export default function ReservarPage() {
+const ROLE_CONDUCTOR = 3;
+
+async function getParkingData(parkingId: number) {
+  const admin = createAdminClient();
+
+  const [parkingRes, spacesRes, paramsRes] = await Promise.all([
+    admin.from("Parkings").select("id, name, address").eq("id", parkingId).single(),
+    admin
+      .from("Spaces")
+      .select("id, name, bookable")
+      .eq("id_parking", parkingId)
+      .eq("bookable", true)
+      .order("name"),
+    admin
+      .from("Parameters")
+      .select("cost_reservation, expires_reservation, deadline_reservation")
+      .eq("id_parking", parkingId)
+      .single(),
+  ]);
+
+  return {
+    parking: parkingRes.data,
+    spaces: spacesRes.data ?? [],
+    params: paramsRes.data ?? null,
+  };
+}
+
+async function getSpaceAvailability(spaceIds: number[]) {
+  if (spaceIds.length === 0) return { occupations: [], reservations: [] };
+  const admin = createAdminClient();
+  const now = new Date().toISOString();
+
+  const [occupationsRes, reservationsRes] = await Promise.all([
+    admin
+      .from("Occupations")
+      .select("id, id_space")
+      .in("id_space", spaceIds)
+      .is("end_date", null),
+    admin
+      .from("Reservations")
+      .select("id, id_space, date, expires_at, taken")
+      .in("id_space", spaceIds)
+      .gte("expires_at", now)
+      .eq("taken", false),
+  ]);
+
+  return {
+    occupations: occupationsRes.data ?? [],
+    reservations: reservationsRes.data ?? [],
+  };
+}
+
+async function getConductorVehicles(email: string) {
+  const admin = createAdminClient();
+  const { data: user } = await admin
+    .from("Users")
+    .select("id")
+    .eq("email", email)
+    .single();
+  if (!user) return [];
+
+  const { data: vehicles } = await admin
+    .from("Vehicle")
+    .select("id, plate")
+    .eq("id_user", user.id)
+    .order("plate");
+
+  return vehicles ?? [];
+}
+
+export default async function ReservarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ parkingId?: string }>;
+}) {
+  const { parkingId: parkingIdStr } = await searchParams;
+  const parkingId = Number(parkingIdStr);
+
+  if (!parkingId) {
+    redirect("/parqueaderos");
+  }
+
+  const { parking, spaces, params } = await getParkingData(parkingId);
+  if (!parking) {
+    redirect("/parqueaderos");
+  }
+
+  const spaceIds = spaces.map((s) => s.id);
+  const { occupations, reservations } = await getSpaceAvailability(spaceIds);
+
+  // Check user auth and role
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let isConductor = false;
+  let vehicles: { id: number; plate: string }[] = [];
+
+  if (user?.email) {
+    const admin = createAdminClient();
+    const { data: dbUser } = await admin
+      .from("Users")
+      .select("id_role")
+      .eq("email", user.email)
+      .single();
+
+    if (dbUser?.id_role === ROLE_CONDUCTOR) {
+      isConductor = true;
+      vehicles = await getConductorVehicles(user.email);
+    }
+  }
+
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-6"
-      style={{ background: "#0b1120" }}
-    >
-      <div
-        className="text-center max-w-md rounded-3xl p-12"
-        style={{
-          background: "#111827",
-          border: "1px solid rgba(255,255,255,0.07)",
-        }}
-      >
-        <div
-          className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
-          style={{
-            background: "linear-gradient(135deg, #3b82f6, #06b6d4)",
-          }}
-        >
-          <Car size={28} className="text-white" />
-        </div>
-        <h1
-          className="text-white mb-3"
-          style={{ fontWeight: 800, fontSize: "1.5rem" }}
-        >
-          Reserva tu puesto
-        </h1>
-        <p className="mb-8 text-sm" style={{ color: "#94a3b8" }}>
-          Próximamente podrás reservar tu puesto de parqueadero directamente
-          desde aquí. Por ahora, explora los parqueaderos disponibles.
-        </p>
-        <Link
-          href="/parqueaderos"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl transition-all hover:opacity-90 text-white"
-          style={{
-            background: "linear-gradient(135deg, #3b82f6, #06b6d4)",
-            fontWeight: 600,
-          }}
-        >
-          Ver parqueaderos
-          <ChevronRight size={16} />
-        </Link>
-      </div>
-    </div>
+    <ReservarPageClient
+      parking={parking}
+      spaces={spaces}
+      occupations={occupations}
+      reservations={reservations}
+      params={params}
+      isConductor={isConductor}
+      vehicles={vehicles}
+    />
   );
 }

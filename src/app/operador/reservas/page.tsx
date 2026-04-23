@@ -1,7 +1,7 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { CalendarCheck } from "lucide-react";
 import CreateReservaForm from "@/components/operador/CreateReservaForm";
-import { fmtDateTimeCO } from "@/lib/dates";
+import { fmtDateTimeCO, dbTs } from "@/lib/dates";
 
 async function getOperadorParkingIds(email: string) {
   const admin = createAdminClient();
@@ -105,7 +105,7 @@ export default async function OperadorReservasPage() {
             <tbody>
               {reservas.map((r: any) => {
                 const expiresAt = r.expires_at
-                  ? new Date(r.expires_at)
+                  ? dbTs(r.expires_at)
                   : null;
                 const expired = expiresAt ? expiresAt < new Date() : false;
                 const taken = !!r.taken;
@@ -132,7 +132,7 @@ export default async function OperadorReservasPage() {
                       #{r.id}
                     </td>
                     <td className="px-4 py-3 text-slate-300">
-                      {fmtDateTimeCO(new Date(r.date))}
+                      {fmtDateTimeCO(dbTs(r.date))}
                     </td>
                     <td className="px-4 py-3 text-slate-400">
                       {expiresAt

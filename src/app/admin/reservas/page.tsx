@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { CalendarCheck } from "lucide-react";
-import { fmtDateTimeCO } from "@/lib/dates";
+import { fmtDateTimeCO, dbTs } from "@/lib/dates";
 
 export default async function AdminReservasPage() {
   const admin = createAdminClient();
@@ -38,7 +38,7 @@ export default async function AdminReservasPage() {
                 <tr key={r.id} className="border-b border-white/[0.05] hover:bg-white/[0.03]">
                   <td className="px-4 py-3 font-mono text-xs text-slate-500">#{r.id}</td>
                   <td className="px-4 py-3 text-slate-300">
-                    {fmtDateTimeCO(new Date(r.date))}
+                    {fmtDateTimeCO(dbTs(r.date))}
                   </td>
                   <td className="px-4 py-3">{r.Spaces?.name ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-400">{r.Spaces?.Parkings?.name ?? "—"}</td>

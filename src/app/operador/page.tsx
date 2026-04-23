@@ -1,7 +1,7 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { ParkingSquare, CalendarCheck, TrendingUp, Clock, Settings } from "lucide-react";
 import EditParametersForm from "@/components/operador/EditParametersForm";
-import { todayCO, tomorrowCO, fmtDateTimeCO } from "@/lib/dates";
+import { todayCO, tomorrowCO, fmtDateTimeCO, dbTs } from "@/lib/dates";
 
 async function getOperadorStats(email: string) {
   const admin = createAdminClient();
@@ -212,8 +212,8 @@ export default async function OperadorDashboardPage() {
               </thead>
               <tbody>
                 {occupations.map((o: any) => {
-                  const start = new Date(o.start_date);
-                  const end = o.end_date ? new Date(o.end_date) : null;
+                  const start = dbTs(o.start_date);
+                  const end = o.end_date ? dbTs(o.end_date) : null;
                   const diffMs = end
                     ? end.getTime() - start.getTime()
                     : Date.now() - start.getTime();

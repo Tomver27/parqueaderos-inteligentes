@@ -47,3 +47,8 @@ export type CreateReservaState =
   | { error: string }
   | { success: true; reservationId: number }
   | undefined;
+
+export type AddVehicleState =
+  | { error: string }
+  | { success: true; vehicleId: number }
+  | undefined;
