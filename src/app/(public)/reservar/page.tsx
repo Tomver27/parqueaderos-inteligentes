@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { cleanExpiredPendingPayments } from "@/lib/actions/conductor";
 import ReservarPageClient from "@/components/reservar/ReservarPageClient";
 
 const ROLE_CONDUCTOR = 3;
@@ -90,6 +91,7 @@ export default async function ReservarPage({
   }
 
   const spaceIds = spaces.map((s) => s.id);
+  await cleanExpiredPendingPayments(createAdminClient());
   const { occupations, reservations } = await getSpaceAvailability(spaceIds);
 
   // Check user auth and role

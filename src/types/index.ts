@@ -45,7 +45,18 @@ export type UpdateParamsState = { error: string } | { success: true } | undefine
 
 export type CreateReservaState =
   | { error: string }
-  | { success: true; reservationId: number }
+  | {
+      success: true;
+      reservationId: number;
+      referenceCode?: string;
+      amount?: number;
+      description?: string;
+      vehiclePlate?: string;
+      parkingName?: string;
+      reservationDate?: string;
+      buyerEmail?: string;
+      buyerName?: string;
+    }
   | undefined;
 
 export type AddVehicleState =

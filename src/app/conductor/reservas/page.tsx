@@ -1,4 +1,5 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { cleanExpiredPendingPayments } from "@/lib/actions/conductor";
 import { CalendarCheck } from "lucide-react";
 import { fmtDateTimeCO, dbTs } from "@/lib/dates";
 
@@ -19,14 +20,29 @@ async function getConductorReservas(email: string) {
   const vehicleIds = vehicles?.map((v) => v.id) ?? [];
   if (vehicleIds.length === 0) return [];
 
-  const { data: reservas } = await admin
-    .from("Reservations")
-    .select("id, date, expires_at, Spaces ( name, Parkings ( name ) ), Vehicle ( plate )")
+  await cleanExpiredPendingPayments(admin);
+
+  const { data: pagos } = await admin
+    .from("Payments")
+    .select(
+      "Reservations ( id, date, expires_at, Spaces ( name, Parkings ( name ) ) ), Vehicle ( plate )"
+    )
     .in("id_car", vehicleIds)
-    .order("date", { ascending: false })
+    .in("status", ["exitoso", "Pagado"])
+    .order("id", { ascending: false })
     .limit(50);
 
-  return reservas ?? [];
+  return (
+    pagos
+      ?.filter((p: any) => p.Reservations)
+      .map((p: any) => ({
+        id: p.Reservations.id,
+        date: p.Reservations.date,
+        expires_at: p.Reservations.expires_at,
+        Spaces: p.Reservations.Spaces,
+        Vehicle: p.Vehicle,
+      })) ?? []
+  );
 }
 
 export default async function ConductorReservasPage() {

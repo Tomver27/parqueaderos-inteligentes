@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { createReservaConductor } from "@/lib/actions/conductor";
+import PayUCheckout from "@/components/PayUCheckout";
 import type { CreateReservaState } from "@/types";
 import { fmtDateTimeCO } from "@/lib/dates";
 
@@ -180,26 +181,24 @@ function ReservePanel({
       )}
 
       {state && "success" in state ? (
-        <div className="flex flex-col items-center gap-4 py-4 text-center">
-          <div
-            className="w-12 h-12 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(16,185,129,0.15)" }}
-          >
-            <Check size={22} style={{ color: "#10b981" }} />
-          </div>
-          <div>
-            <p className="text-white font-semibold">¡Reserva confirmada!</p>
-            <p className="text-sm mt-1" style={{ color: "#64748b" }}>
-              Reserva #{state.reservationId} creada exitosamente
+        <div className="space-y-4">
+          <div className="rounded-2xl bg-slate-950 p-4 border border-white/10">
+            <p className="text-white font-semibold text-sm">Reserva #{state.reservationId} creada</p>
+            <p className="text-xs mt-1 text-slate-400">
+              Completa el pago para confirmar tu reserva.
             </p>
           </div>
-          <Link
-            href="/conductor/reservas"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-            style={{ background: "linear-gradient(135deg,#3b82f6,#06b6d4)" }}
-          >
-            Ver mis reservas <ChevronRight size={14} />
-          </Link>
+          <PayUCheckout
+            referenceCode={state.referenceCode!}
+            amount={state.amount!}
+            description={state.description!}
+            buyerEmail={state.buyerEmail!}
+            buyerName={state.buyerName!}
+            reservationId={state.reservationId}
+            parkingName={state.parkingName!}
+            reservationDate={state.reservationDate!}
+            vehiclePlate={state.vehiclePlate!}
+          />
         </div>
       ) : (
         <form action={action} className="space-y-4">

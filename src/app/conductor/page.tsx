@@ -1,4 +1,5 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { cleanExpiredPendingPayments } from "@/lib/actions/conductor";
 import { CalendarCheck, CarFront, CreditCard } from "lucide-react";
 
 async function getConductorStats(email: string) {
@@ -22,11 +23,14 @@ async function getConductorStats(email: string) {
   let pagosCount = 0;
 
   if (vehicleIds.length > 0) {
+    await cleanExpiredPendingPayments(admin);
+
     const [reservas, pagos] = await Promise.all([
       admin
-        .from("Reservations")
+        .from("Payments")
         .select("id", { count: "exact", head: true })
-        .in("id_car", vehicleIds),
+        .in("id_car", vehicleIds)
+        .in("status", ["exitoso", "Pagado"]),
       admin
         .from("Payments")
         .select("id", { count: "exact", head: true })

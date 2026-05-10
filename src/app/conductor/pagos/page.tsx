@@ -1,8 +1,10 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { cleanExpiredPendingPayments } from "@/lib/actions/conductor";
 import { CreditCard } from "lucide-react";
 
 async function getConductorPayments(email: string) {
   const admin = createAdminClient();
+  await cleanExpiredPendingPayments(admin);
   const { data: user } = await admin
     .from("Users")
     .select("id")
@@ -61,13 +63,29 @@ export default async function ConductorPagosPage() {
                     {Number(p.amount).toLocaleString("es-CO")} {p.currency}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                      p.status === "exitoso" ? "bg-emerald-500/15 text-emerald-400" :
-                      p.status === "pendiente" ? "bg-amber-500/15 text-amber-400" :
-                      "bg-red-500/15 text-red-400"
-                    }`}>
-                      {p.status}
-                    </span>
+                    {(() => {
+                      const status = String(p.status).toLowerCase();
+                      const statusLabel =
+                        status === "exitoso" || status === "pagado"
+                          ? "Exitoso"
+                          : status === "pendiente"
+                          ? "Pendiente"
+                          : status === "rechazado"
+                          ? "Rechazado"
+                          : p.status;
+                      const statusClass =
+                        status === "exitoso" || status === "pagado"
+                          ? "bg-emerald-500/15 text-emerald-400"
+                          : status === "pendiente"
+                          ? "bg-amber-500/15 text-amber-400"
+                          : "bg-red-500/15 text-red-400";
+
+                      return (
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusClass}`}>
+                          {statusLabel}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3 text-slate-400">{p.Vehicle?.plate ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-400">
