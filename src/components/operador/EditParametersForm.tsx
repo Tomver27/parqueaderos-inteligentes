@@ -3,16 +3,7 @@
 import { useActionState, useState } from "react";
 import { Pencil, Save, X, Check } from "lucide-react";
 import { updateParameters } from "@/lib/actions/operador";
-
-type Params = {
-  id_parking: number;
-  expires_reservation: number;
-  deadline_reservation: number;
-  cost_reservation: number;
-  fee: number;
-};
-
-import type { UpdateParamsState } from "@/types";
+import type { UpdateParamsState, ParkingParams } from "@/types";
 
 const INPUT_CLASS =
   "w-full rounded-lg px-3 py-2 text-sm text-white outline-none transition-all focus:ring-2 focus:ring-violet-500/40";
@@ -22,7 +13,7 @@ const INPUT_STYLE = {
   border: "1px solid rgba(255,255,255,0.12)",
 };
 
-export default function EditParametersForm({ params }: { params: Params }) {
+export default function EditParametersForm({ params }: { params: ParkingParams }) {
   const [editing, setEditing] = useState(false);
   const [state, action, pending] = useActionState<UpdateParamsState, FormData>(
     updateParameters,

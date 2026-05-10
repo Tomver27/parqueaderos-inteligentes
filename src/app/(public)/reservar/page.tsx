@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { cleanExpiredPendingPayments } from "@/lib/actions/conductor";
 import ReservarPageClient from "@/components/reservar/ReservarPageClient";
+import type { Vehicle } from "@/types";
 
 const ROLE_CONDUCTOR = 3;
 
@@ -101,7 +102,7 @@ export default async function ReservarPage({
   } = await supabase.auth.getUser();
 
   let isConductor = false;
-  let vehicles: { id: number; plate: string }[] = [];
+  let vehicles: Vehicle[] = [];
 
   if (user?.email) {
     const admin = createAdminClient();

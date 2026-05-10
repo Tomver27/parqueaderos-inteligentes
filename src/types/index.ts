@@ -63,3 +63,31 @@ export type AddVehicleState =
   | { error: string }
   | { success: true; vehicleId: number }
   | undefined;
+
+export type Occupation = { id: number; id_space: number };
+
+export type Reservation = {
+  id: number;
+  id_space: number;
+  date: string;
+  expires_at: string | null;
+  taken: boolean;
+};
+
+export type Vehicle = { id: number; plate: string };
+
+export type ParkingParams = {
+  id_parking: number;
+  cost_reservation: number;
+  expires_reservation: number;
+  deadline_reservation: number;
+  fee: number;
+};
+
+export type ReservaParams = Pick<
+  ParkingParams,
+  "cost_reservation" | "expires_reservation" | "deadline_reservation"
+>;
+
+export type SpaceSlot = Pick<Space, "id" | "name" | "bookable">;
+export type ParkingInfo = Pick<Parking, "id" | "name" | "address">;

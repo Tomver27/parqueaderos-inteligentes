@@ -13,44 +13,16 @@ import {
 } from "lucide-react";
 import { createReservaConductor } from "@/lib/actions/conductor";
 import PayUCheckout from "@/components/PayUCheckout";
-import type { CreateReservaState } from "@/types";
+import type {
+  CreateReservaState,
+  Occupation,
+  Reservation,
+  Vehicle,
+  SpaceSlot,
+  ParkingInfo,
+  ReservaParams,
+} from "@/types";
 import { fmtDateTimeCO } from "@/lib/dates";
-
-type Space = {
-  id: number;
-  name: string;
-  bookable: boolean;
-};
-
-type Occupation = {
-  id: number;
-  id_space: number;
-};
-
-type Reservation = {
-  id: number;
-  id_space: number;
-  date: string;
-  expires_at: string | null;
-  taken: boolean;
-};
-
-type Vehicle = {
-  id: number;
-  plate: string;
-};
-
-type Parking = {
-  id: number;
-  name: string;
-  address: string;
-};
-
-type Params = {
-  cost_reservation: number;
-  expires_reservation: number;
-  deadline_reservation: number;
-};
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -70,7 +42,7 @@ function getColombiaDay(dateStr: string): string {
 
 /** Compute minimum selectable datetime string (now + deadline minutes, local browser time) */
 function minDatetime(deadlineMinutes: number): string {
-  const d = new Date(Date.now() + deadlineMinutes * 60_000);
+  const d = new Date(Date.now() + (deadlineMinutes + 1) * 60_000);
   // datetime-local expects "YYYY-MM-DDTHH:MM" in browser local time
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
@@ -137,7 +109,7 @@ function ReservePanel({
   vehicles,
   onClose,
 }: {
-  space: Space;
+  space: SpaceSlot;
   selectedDatetime: string;
   vehicles: Vehicle[];
   onClose: () => void;
@@ -270,17 +242,17 @@ export default function ReservarPageClient({
   isConductor,
   vehicles,
 }: {
-  parking: Parking;
-  spaces: Space[];
+  parking: ParkingInfo;
+  spaces: SpaceSlot[];
   occupations: Occupation[];
   reservations: Reservation[];
-  params: Params | null;
+  params: ReservaParams | null;
   isConductor: boolean;
   vehicles: Vehicle[];
 }) {
   const deadline = params?.deadline_reservation ?? 0;
   const [selectedDatetime, setSelectedDatetime] = useState<string>(minDatetime(deadline));
-  const [selectedSpace, setSelectedSpace] = useState<Space | null>(null);
+  const [selectedSpace, setSelectedSpace] = useState<SpaceSlot | null>(null);
   const [, startTransition] = useTransition();
 
   const spaceStatuses = useMemo<Record<number, SpaceStatus>>(() => {
