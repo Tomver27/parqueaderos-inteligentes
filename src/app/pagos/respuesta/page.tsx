@@ -66,6 +66,19 @@ export default async function PagoRespuestaPage({
     positive: false,
   };
 
+  const reservation = Array.isArray(payment?.Reservations)
+    ? payment.Reservations[0]
+    : payment?.Reservations;
+  const space = Array.isArray(reservation?.Spaces)
+    ? reservation?.Spaces[0]
+    : reservation?.Spaces;
+  const parking = Array.isArray(space?.Parkings)
+    ? space?.Parkings[0]
+    : space?.Parkings;
+  const vehicle = Array.isArray(payment?.Vehicle)
+    ? payment.Vehicle[0]
+    : payment?.Vehicle;
+
   return (
     <div className="min-h-screen px-4 py-10" style={{ background: "#0b1120" }}>
       <div className="max-w-3xl mx-auto">
@@ -82,34 +95,34 @@ export default async function PagoRespuestaPage({
                 <div className="rounded-2xl bg-slate-950 p-4">
                   <p className="text-xs text-slate-500">Reserva</p>
                   <p className="font-semibold text-white">
-                    #{payment.Reservations?.id ?? "—"}
+                    #{reservation?.id ?? "—"}
                   </p>
                   <p className="text-slate-400 text-sm mt-1">
-                    {payment.Reservations?.Spaces?.Parkings?.name ?? "-"}
+                    {parking?.name ?? "-"}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-slate-950 p-4">
                   <p className="text-xs text-slate-500">Puesto</p>
                   <p className="font-semibold text-white">
-                    {payment.Reservations?.Spaces?.name ?? "—"}
+                    {space?.name ?? "—"}
                   </p>
                   <p className="text-slate-400 text-sm mt-1">Espacio reservado</p>
                 </div>
                 <div className="rounded-2xl bg-slate-950 p-4">
                   <p className="text-xs text-slate-500">Vehículo</p>
-                  <p className="font-semibold text-white">{payment.Vehicle?.plate ?? "—"}</p>
+                  <p className="font-semibold text-white">{vehicle?.plate ?? "—"}</p>
                   <p className="text-slate-400 text-sm mt-1">
                     {payment.amount?.toLocaleString("es-CO")} {payment.currency}
                   </p>
                 </div>
-                {payment.Reservations?.date && (
+                {reservation?.date && (
                   <div className="rounded-2xl bg-slate-950 p-4">
                     <p className="text-xs text-slate-500">Fecha de la reserva</p>
                     <p className="font-semibold text-white">
                       {fmtDateTimeCO(new Date(
-                        payment.Reservations.date.endsWith("Z") || payment.Reservations.date.includes("+")
-                          ? payment.Reservations.date
-                          : payment.Reservations.date + "Z"
+                        reservation.date.endsWith("Z") || reservation.date.includes("+")
+                          ? reservation.date
+                          : reservation.date + "Z"
                       ))}
                     </p>
                   </div>
