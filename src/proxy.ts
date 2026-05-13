@@ -51,7 +51,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/parqueaderos") ||
     pathname.startsWith("/reservar") ||
     pathname.startsWith("/api/sensors") ||
-    pathname.startsWith("/api/plates");
+    pathname.startsWith("/api/plates") ||
+    pathname.startsWith("/api/webhook/infrarojo");
 
   // Public routes — allow without session
   if (isPublicRoute || isAuthRoute) {

@@ -4,6 +4,7 @@ import StatsSection from "@/components/landing/StatsSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import CTASection from "@/components/landing/CTASection";
+import SensorInfrarrojo from "@/components/landing/SensorInfrarrojo";
 
 export default async function LandingPage() {
   const stats = await getParkingStats();
@@ -11,6 +12,9 @@ export default async function LandingPage() {
   return (
     <div className="text-white">
       <HeroSection stats={stats} />
+      <div className="flex justify-center py-4">
+        <SensorInfrarrojo />
+      </div>
       <StatsSection />
       <FeaturesSection />
       <HowItWorksSection />
