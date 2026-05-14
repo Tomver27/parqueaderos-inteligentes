@@ -1,6 +1,8 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { CalendarCheck } from "lucide-react";
 import CreateReservaForm from "@/components/operador/CreateReservaForm";
+import EditReservaForm from "@/components/operador/EditReservaForm";
+import DeleteReservaButton from "@/components/operador/DeleteReservaButton";
 import { fmtDateTimeCO, dbTs } from "@/lib/dates";
 
 async function getOperadorParkingIds(email: string) {
@@ -27,11 +29,11 @@ async function getOperadorReservas(parkingIds: number[]) {
   const { data: reservas } = await admin
     .from("Reservations")
     .select(
-      "id, date, expires_at, taken, Spaces!inner ( name, id_parking ), Vehicle ( plate )",
+      "id, date, expires_at, taken, id_space, id_car, Spaces!inner ( name, id_parking ), Vehicle ( plate )",
     )
     .in("Spaces.id_parking", parkingIds)
     .order("date", { ascending: false })
-    .limit(50);
+    .limit(100);
 
   return reservas ?? [];
 }
@@ -100,13 +102,12 @@ export default async function OperadorReservasPage() {
                 <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Espacio</th>
                 <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Vehículo</th>
                 <th className="text-center px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Estado</th>
+                <th className="text-center px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {reservas.map((r: any) => {
-                const expiresAt = r.expires_at
-                  ? dbTs(r.expires_at)
-                  : null;
+                const expiresAt = r.expires_at ? dbTs(r.expires_at) : null;
                 const expired = expiresAt ? expiresAt < new Date() : false;
                 const taken = !!r.taken;
 
@@ -135,22 +136,32 @@ export default async function OperadorReservasPage() {
                       {fmtDateTimeCO(dbTs(r.date))}
                     </td>
                     <td className="px-4 py-3 text-slate-400">
-                      {expiresAt
-                        ? fmtDateTimeCO(expiresAt)
-                        : "—"}
+                      {expiresAt ? fmtDateTimeCO(expiresAt) : "—"}
                     </td>
                     <td className="px-4 py-3">
                       {r.Spaces?.name ?? "—"}
                     </td>
                     <td className="px-4 py-3 text-slate-400">
-                      {r.Vehicle?.plate ?? "—"}
+                      {r.Vehicle?.plate ?? `ID ${r.id_car}`}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span
-                        className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${statusClass}`}
-                      >
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${statusClass}`}>
                         {statusLabel}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-2">
+                        <EditReservaForm
+                          reserva={{
+                            id: r.id,
+                            date: r.date,
+                            id_space: r.id_space,
+                            id_car: r.id_car,
+                          }}
+                          spaces={spaces}
+                        />
+                        <DeleteReservaButton reservaId={r.id} />
+                      </div>
                     </td>
                   </tr>
                 );
