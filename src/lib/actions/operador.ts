@@ -384,3 +384,99 @@ export async function deleteSpace(
   revalidatePath("/operador/espacios");
   return { success: true };
 }
+
+/* ------------------------------------------------------------------ */
+/*  Obtener ingresos del operador                                      */
+/* ------------------------------------------------------------------ */
+
+export interface PaymentWithDetails {
+  id: number;
+  amount: number;
+  currency: string;
+  status: string;
+  id_car: number;
+  id_reservation: number;
+  Vehicle?: { plate: string } | null;
+}
+
+export interface RevenueData {
+  totalCOP: number;
+  totalUSD: number;
+  paymentsCOP: PaymentWithDetails[];
+  paymentsUSD: PaymentWithDetails[];
+  allPayments: PaymentWithDetails[];
+}
+
+const emptyRevenue = (): RevenueData => ({
+  totalCOP: 0,
+  totalUSD: 0,
+  paymentsCOP: [],
+  paymentsUSD: [],
+  allPayments: [],
+});
+
+export async function getOperadorRevenue(email: string): Promise<RevenueData> {
+  const admin = createAdminClient();
+
+  const { data: user } = await admin
+    .from("Users")
+    .select("id")
+    .eq("email", email)
+    .single();
+  if (!user) return emptyRevenue();
+
+  const { data: assignments } = await admin
+    .from("ParkingOperators")
+    .select("id_parking")
+    .eq("id_user", user.id);
+
+  const parkingIds = assignments?.map((a) => a.id_parking) ?? [];
+  if (parkingIds.length === 0) return emptyRevenue();
+
+  const { data: spaces } = await admin
+    .from("Spaces")
+    .select("id")
+    .in("id_parking", parkingIds);
+
+  const spaceIds = spaces?.map((s) => s.id) ?? [];
+  if (spaceIds.length === 0) return emptyRevenue();
+
+  const { data: reservations } = await admin
+    .from("Reservations")
+    .select("id")
+    .in("id_space", spaceIds);
+
+  const reservationIds = reservations?.map((r) => r.id) ?? [];
+  if (reservationIds.length === 0) return emptyRevenue();
+
+  const { data: payments } = await admin
+    .from("Payments")
+    .select("id, amount, currency, status, id_car, id_reservation, Vehicle ( plate )")
+    .in("id_reservation", reservationIds)
+    .in("status", ["Pagado", "exitoso"])
+    .order("id", { ascending: false });
+
+  const allPayments = (payments ?? []).map((payment) => {
+    const vehicle = Array.isArray(payment.Vehicle) ? payment.Vehicle[0] : payment.Vehicle;
+    return {
+      id: payment.id,
+      amount: payment.amount,
+      currency: payment.currency,
+      status: payment.status,
+      id_car: payment.id_car,
+      id_reservation: payment.id_reservation,
+      Vehicle: vehicle ? { plate: (vehicle as { plate: string }).plate } : null,
+    };
+  }) as PaymentWithDetails[];
+
+  const paymentsCOP = allPayments.filter((p) => p.currency === "COP");
+  const paymentsUSD = allPayments.filter((p) => p.currency === "USD");
+
+  return {
+    totalCOP: paymentsCOP.reduce((sum, p) => sum + Number(p.amount), 0),
+    totalUSD: paymentsUSD.reduce((sum, p) => sum + Number(p.amount), 0),
+    paymentsCOP,
+    paymentsUSD,
+    allPayments,
+  };
+}
