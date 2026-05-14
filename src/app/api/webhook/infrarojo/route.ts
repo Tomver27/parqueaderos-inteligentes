@@ -1,17 +1,11 @@
 import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 interface SensorPayload {
   device: string;
   estado: "LIBRE" | "OCUPADO";
   valor_adc: number;
 }
-
-interface SensorState extends SensorPayload {
-  updated_at: string;
-}
-
-// Module-level singleton — persists within the Node.js process lifetime
-let sensorState: SensorState | null = null;
 
 // POST /api/webhook/infrarojo
 export async function POST(request: Request) {
@@ -31,12 +25,40 @@ export async function POST(request: Request) {
     );
   }
 
-  sensorState = { device, estado, valor_adc, updated_at: new Date().toISOString() };
+  if (estado !== "LIBRE" && estado !== "OCUPADO") {
+    return NextResponse.json(
+      { error: `estado inválido: "${estado}". Valores permitidos: "LIBRE" o "OCUPADO"` },
+      { status: 400 },
+    );
+  }
 
-  return NextResponse.json({ message: "Estado del sensor actualizado", sensor: sensorState });
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("SensorInfrarrojo")
+    .upsert({ device, estado, valor_adc, updated_at: new Date().toISOString() }, { onConflict: "device" })
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ message: "Estado del sensor actualizado", sensor: data });
 }
 
 // GET /api/webhook/infrarojo
 export async function GET() {
-  return NextResponse.json({ sensor: sensorState });
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("SensorInfrarrojo")
+    .select("*")
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ sensor: data ?? null });
 }
