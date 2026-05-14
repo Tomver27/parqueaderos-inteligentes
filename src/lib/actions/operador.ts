@@ -218,3 +218,169 @@ export async function updateParameters(
   revalidatePath("/operador");
   return { success: true };
 }
+
+/* ------------------------------------------------------------------ */
+/*  CRUD Espacios                                                      */
+/* ------------------------------------------------------------------ */
+
+export interface SpaceFormState {
+  success?: boolean;
+  error?: string;
+}
+
+export async function createSpace(
+  _prev: SpaceFormState,
+  formData: FormData,
+): Promise<SpaceFormState> {
+  const name = String(formData.get("name") ?? "").trim();
+  const bookable = formData.get("bookable") === "on";
+  const idTypev = Number(formData.get("id_typev") ?? 0);
+  const idParking = Number(formData.get("id_parking") ?? 0);
+
+  if (!name || !idParking || (idTypev && !idTypev)) {
+    return { error: "Nombre y tipo de vehículo son obligatorios." };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) return { error: "No autenticado." };
+
+  const admin = createAdminClient();
+
+  const { data: dbUser } = await admin
+    .from("Users")
+    .select("id")
+    .eq("email", user.email)
+    .single();
+  if (!dbUser) return { error: "Usuario no encontrado." };
+
+  // Verify operator is assigned to this parking
+  const { data: assignment } = await admin
+    .from("ParkingOperators")
+    .select("id")
+    .eq("id_user", dbUser.id)
+    .eq("id_parking", idParking)
+    .single();
+  if (!assignment) return { error: "No tienes permisos para este parqueadero." };
+
+  const { error } = await admin.from("Spaces").insert({
+    name,
+    bookable,
+    id_typev: idTypev || null,
+    id_parking: idParking,
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/operador/espacios");
+  return { success: true };
+}
+
+export async function updateSpace(
+  _prev: SpaceFormState,
+  formData: FormData,
+): Promise<SpaceFormState> {
+  const id = Number(formData.get("id") ?? 0);
+  const name = String(formData.get("name") ?? "").trim();
+  const bookable = formData.get("bookable") === "on";
+  const idTypev = Number(formData.get("id_typev") ?? 0);
+
+  if (!id || !name) {
+    return { error: "ID y nombre son obligatorios." };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) return { error: "No autenticado." };
+
+  const admin = createAdminClient();
+
+  const { data: dbUser } = await admin
+    .from("Users")
+    .select("id")
+    .eq("email", user.email)
+    .single();
+  if (!dbUser) return { error: "Usuario no encontrado." };
+
+  // Verify the space belongs to one of the operator's parkings
+  const { data: space } = await admin
+    .from("Spaces")
+    .select("id_parking")
+    .eq("id", id)
+    .single();
+  if (!space) return { error: "Espacio no encontrado." };
+
+  const { data: assignment } = await admin
+    .from("ParkingOperators")
+    .select("id")
+    .eq("id_user", dbUser.id)
+    .eq("id_parking", space.id_parking)
+    .single();
+  if (!assignment) return { error: "No tienes permisos para este espacio." };
+
+  const { error } = await admin
+    .from("Spaces")
+    .update({ name, bookable, id_typev: idTypev || null })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/operador/espacios");
+  return { success: true };
+}
+
+export async function deleteSpace(
+  _prev: SpaceFormState,
+  formData: FormData,
+): Promise<SpaceFormState> {
+  const id = Number(formData.get("id") ?? 0);
+
+  if (!id) return { error: "ID del espacio es obligatorio." };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) return { error: "No autenticado." };
+
+  const admin = createAdminClient();
+
+  const { data: dbUser } = await admin
+    .from("Users")
+    .select("id")
+    .eq("email", user.email)
+    .single();
+  if (!dbUser) return { error: "Usuario no encontrado." };
+
+  // Verify the space belongs to one of the operator's parkings
+  const { data: space } = await admin
+    .from("Spaces")
+    .select("id_parking")
+    .eq("id", id)
+    .single();
+  if (!space) return { error: "Espacio no encontrado." };
+
+  const { data: assignment } = await admin
+    .from("ParkingOperators")
+    .select("id")
+    .eq("id_user", dbUser.id)
+    .eq("id_parking", space.id_parking)
+    .single();
+  if (!assignment) return { error: "No tienes permisos para este espacio." };
+
+  // Check if space has active occupations
+  const { data: activeOccupations } = await admin
+    .from("Occupations")
+    .select("id")
+    .eq("id_space", id)
+    .is("end_date", null);
+
+  if (activeOccupations && activeOccupations.length > 0) {
+    return { error: "No puedes eliminar un espacio que está ocupado." };
+  }
+
+  const { error } = await admin.from("Spaces").delete().eq("id", id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/operador/espacios");
+  return { success: true };
+}

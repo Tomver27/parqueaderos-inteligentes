@@ -1,14 +1,17 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
-import { ParkingSquare } from "lucide-react";
+import SpacesTable from "@/components/operador/SpacesTable";
+import EditSpaceForm from "@/components/operador/EditSpaceForm";
+import { Plus } from "lucide-react";
 
-async function getOperadorSpaces(email: string) {
+async function getOperadorData(email: string) {
   const admin = createAdminClient();
+
   const { data: user } = await admin
     .from("Users")
     .select("id")
     .eq("email", email)
     .single();
-  if (!user) return [];
+  if (!user) return { spaces: [], vehicleTypes: [], parkingIds: [] };
 
   const { data: assignments } = await admin
     .from("ParkingOperators")
@@ -16,15 +19,14 @@ async function getOperadorSpaces(email: string) {
     .eq("id_user", user.id);
 
   const parkingIds = assignments?.map((a) => a.id_parking) ?? [];
-  if (parkingIds.length === 0) return [];
+  if (parkingIds.length === 0) return { spaces: [], vehicleTypes: [], parkingIds };
 
   const { data: spaces } = await admin
     .from("Spaces")
     .select("id, name, bookable, id_parking, id_typev, Parkings ( name ), TypeVehicles ( name )")
     .in("id_parking", parkingIds)
-    .order("name");
+    .order("id_parking, name");
 
-  // Active occupations (end_date IS NULL) for these spaces
   const spaceIds = spaces?.map((s) => s.id) ?? [];
   const { data: occupations } = spaceIds.length
     ? await admin
@@ -36,69 +38,68 @@ async function getOperadorSpaces(email: string) {
 
   const occupiedSet = new Set(occupations?.map((o) => o.id_space) ?? []);
 
-  return (spaces ?? []).map((s) => ({ ...s, occupied: occupiedSet.has(s.id) }));
+  const { data: vehicleTypes } = await admin
+    .from("TypeVehicles")
+    .select("id, name")
+    .order("name");
+
+  return {
+    spaces: (spaces ?? []).map((s) => ({ ...s, occupied: occupiedSet.has(s.id) })),
+    vehicleTypes: vehicleTypes ?? [],
+    parkingIds,
+  };
 }
 
 export default async function OperadorEspaciosPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const spaces = user?.email ? await getOperadorSpaces(user.email) : [];
+  const { spaces, vehicleTypes, parkingIds } = user?.email
+    ? await getOperadorData(user.email)
+    : { spaces: [], vehicleTypes: [], parkingIds: [] };
+
+  const groupedSpaces = new Map<number, any[]>();
+  spaces.forEach((space: any) => {
+    if (!groupedSpaces.has(space.id_parking)) {
+      groupedSpaces.set(space.id_parking, []);
+    }
+    groupedSpaces.get(space.id_parking)!.push(space);
+  });
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-1">Espacios</h1>
-      <p className="text-slate-400 text-sm mb-6">
-        Estado de los espacios de tu parqueadero
-      </p>
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">Espacios</h1>
+          <p className="text-slate-400 text-sm">
+            Administra los espacios de tu parqueadero
+          </p>
+        </div>
+        {parkingIds.length > 0 && (
+          <EditSpaceForm
+            vehicleTypes={vehicleTypes}
+            parkingId={parkingIds[0]}
+          />
+        )}
+      </div>
 
-      {spaces.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {spaces.map((s: any) => (
-            <div
-              key={s.id}
-              className={`rounded-xl border p-4 text-center ${
-                s.occupied
-                  ? "border-red-500/30 bg-red-950/30"
-                  : "border-white/[0.07] bg-[#0f172a]"
-              }`}
-            >
-              <ParkingSquare
-                size={20}
-                className={`mx-auto mb-2 ${s.occupied ? "text-red-400" : "text-violet-400"}`}
+      {groupedSpaces.size > 0 ? (
+        <div className="space-y-8">
+          {Array.from(groupedSpaces.entries()).map(([parkingId, parkingSpaces]) => (
+            <div key={parkingId}>
+              <h2 className="text-lg font-semibold mb-4">
+                {parkingSpaces[0]?.Parkings?.name || `Parqueadero ${parkingId}`}
+              </h2>
+              <SpacesTable
+                spaces={parkingSpaces}
+                vehicleTypes={vehicleTypes}
+                parkingId={parkingId}
               />
-              <p className="font-semibold text-sm">{s.name}</p>
-              <p className="text-xs text-slate-500 mt-1">
-                {s.TypeVehicles?.name ?? "General"}
-              </p>
-              <div className="mt-2 flex flex-col items-center gap-1">
-                <span
-                  className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                    s.bookable
-                      ? "bg-blue-500/15 text-blue-400"
-                      : "bg-amber-500/15 text-amber-400"
-                  }`}
-                >
-                  {s.bookable ? "Reservable" : "Uso libre"}
-                </span>
-                <span
-                  className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                    s.occupied
-                      ? "bg-red-500/15 text-red-400"
-                      : "bg-emerald-500/15 text-emerald-400"
-                  }`}
-                >
-                  {s.occupied ? "Ocupado" : "Disponible"}
-                </span>
-              </div>
             </div>
           ))}
         </div>
       ) : (
         <div className="rounded-xl border border-white/[0.07] bg-[#0f172a] p-12 text-center">
-          <ParkingSquare size={32} className="mx-auto mb-3 text-slate-600" />
           <p className="text-slate-400 text-sm">Sin espacios asignados</p>
         </div>
       )}
