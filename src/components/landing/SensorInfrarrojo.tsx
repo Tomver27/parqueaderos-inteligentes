@@ -15,7 +15,7 @@ export default function SensorInfrarrojo() {
   useEffect(() => {
     const fetchEstado = async () => {
       try {
-        const res = await fetch("/api/webhook/infrarojo");
+        const res = await fetch("/api/webhook");
         const data = await res.json();
         setSensor(data.sensor);
       } catch {
