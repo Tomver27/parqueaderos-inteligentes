@@ -96,6 +96,9 @@ export default async function OperadorIngresosPage() {
                   <th className="text-left py-3 px-4 font-semibold text-slate-300">
                     Estado
                   </th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-300">
+                    Fecha
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -126,6 +129,18 @@ export default async function OperadorIngresosPage() {
                       >
                         {payment.status}
                       </span>
+                    </td>
+                    <td className="py-3 px-4 text-slate-500 text-xs">
+                      {payment.created_at
+                        ? new Date(payment.created_at).toLocaleString("es-CO", {
+                            timeZone: "America/Bogota",
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "—"}
                     </td>
                   </tr>
                 ))}

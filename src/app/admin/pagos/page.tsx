@@ -10,10 +10,11 @@ export default async function AdminPagosPage() {
       amount,
       currency,
       status,
+      created_at,
       Vehicle ( plate ),
       Reservations ( date, Spaces ( name, Parkings ( name ) ) )
     `)
-    .order("id", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(50);
 
   return (
@@ -31,6 +32,7 @@ export default async function AdminPagosPage() {
                 <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Estado</th>
                 <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Vehículo</th>
                 <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Parqueadero</th>
+                <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Fecha</th>
               </tr>
             </thead>
             <tbody>
@@ -52,6 +54,18 @@ export default async function AdminPagosPage() {
                   <td className="px-4 py-3 text-slate-400">{p.Vehicle?.plate ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-400">
                     {p.Reservations?.Spaces?.Parkings?.name ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 text-slate-500 text-xs">
+                    {p.created_at
+                      ? new Date(p.created_at).toLocaleString("es-CO", {
+                          timeZone: "America/Bogota",
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—"}
                   </td>
                 </tr>
               ))}

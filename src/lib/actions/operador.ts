@@ -396,6 +396,7 @@ export interface PaymentWithDetails {
   status: string;
   id_car: number;
   id_reservation: number;
+  created_at?: string | null;
   Vehicle?: { plate: string } | null;
 }
 
@@ -451,10 +452,10 @@ export async function getOperadorRevenue(email: string): Promise<RevenueData> {
 
   const { data: payments } = await admin
     .from("Payments")
-    .select("id, amount, currency, status, id_car, id_reservation, Vehicle ( plate )")
+    .select("id, amount, currency, status, id_car, id_reservation, created_at, Vehicle ( plate )")
     .in("id_reservation", reservationIds)
     .in("status", ["Pagado", "exitoso"])
-    .order("id", { ascending: false });
+    .order("created_at", { ascending: false });
 
   const allPayments = (payments ?? []).map((payment) => {
     const vehicle = Array.isArray(payment.Vehicle) ? payment.Vehicle[0] : payment.Vehicle;
@@ -465,6 +466,7 @@ export async function getOperadorRevenue(email: string): Promise<RevenueData> {
       status: payment.status,
       id_car: payment.id_car,
       id_reservation: payment.id_reservation,
+      created_at: payment.created_at ?? null,
       Vehicle: vehicle ? { plate: (vehicle as { plate: string }).plate } : null,
     };
   }) as PaymentWithDetails[];

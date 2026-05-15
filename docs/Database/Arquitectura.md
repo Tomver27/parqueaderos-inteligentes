@@ -21,7 +21,7 @@ La base de datos se divide en las siguientes áreas lógicas:
 - **TypeVehicles**: Categorización (Carro, Moto, etc.).
 - **Vehicle**: Registro de vehículos y su relación con dueños.
 - **Reservations**: Control de apartados de cupos. Solo aplica para espacios con `bookable = true`. Incluye el atributo `taken` (`BOOLEAN DEFAULT FALSE`) que indica si el vehículo efectivamente se presentó al parqueadero (detectado por cámara ANPR).
-- **Payments**: Gestión de transacciones y estados de pago. Se crea un registro por cada reserva con estado por defecto `"Pagado"`, moneda (`COP`/`USD`) y monto igual al `cost_reservation` del parqueadero.
+- **Payments**: Gestión de transacciones y estados de pago. Se crea un registro por cada reserva con estado por defecto `"Pagado"`, moneda (`COP`/`USD`) y monto igual al `cost_reservation` del parqueadero. El campo `created_at` (`TIMESTAMPTZ`) registra automáticamente la fecha y hora de creación del pago.
 - **Occupations**: Seguimiento en tiempo real de la entrada y salida de vehículos. Aplica para **todos** los espacios (bookable y no bookable). Para espacios no reservables (`bookable = false`), `Occupations` es la única fuente de estado.
 
 ### Reglas de negocio para Reservas
@@ -173,6 +173,7 @@ CREATE TABLE "Payments" (
     status TEXT NOT NULL,
     id_car INTEGER NOT NULL,
     id_reservation INTEGER NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT fk_Payments_id_car_Cars
         FOREIGN KEY (id_car) REFERENCES "Vehicle"(id)
