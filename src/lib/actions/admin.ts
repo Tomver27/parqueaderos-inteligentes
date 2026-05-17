@@ -1,8 +1,75 @@
 "use server";
 
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { InviteState } from "@/types";
+
+export interface ParkingFormState {
+  error?: string;
+  success?: boolean;
+}
+
+export async function createParking(
+  _prev: ParkingFormState,
+  formData: FormData,
+): Promise<ParkingFormState> {
+  const name = (formData.get("name") as string).trim();
+  const address = (formData.get("address") as string).trim();
+  const latitude = (formData.get("latitude") as string).trim();
+  const longitude = (formData.get("longitude") as string).trim();
+
+  if (!name || !address || !latitude || !longitude) {
+    return { error: "Todos los campos son obligatorios." };
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin.from("Parkings").insert({ name, address, latitude, longitude });
+
+  if (error) return { error: error.message };
+  revalidatePath("/admin/parqueaderos");
+  return { success: true };
+}
+
+export async function updateParking(
+  _prev: ParkingFormState,
+  formData: FormData,
+): Promise<ParkingFormState> {
+  const id = Number(formData.get("id"));
+  const name = (formData.get("name") as string).trim();
+  const address = (formData.get("address") as string).trim();
+  const latitude = (formData.get("latitude") as string).trim();
+  const longitude = (formData.get("longitude") as string).trim();
+
+  if (!id || !name || !address || !latitude || !longitude) {
+    return { error: "Todos los campos son obligatorios." };
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("Parkings")
+    .update({ name, address, latitude, longitude })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/admin/parqueaderos");
+  return { success: true };
+}
+
+export async function deleteParking(
+  _prev: ParkingFormState,
+  formData: FormData,
+): Promise<ParkingFormState> {
+  const id = Number(formData.get("id"));
+  if (!id) return { error: "ID inválido." };
+
+  const admin = createAdminClient();
+  const { error } = await admin.from("Parkings").delete().eq("id", id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/admin/parqueaderos");
+  return { success: true };
+}
 
 export async function inviteOperador(
   _prev: InviteState,
