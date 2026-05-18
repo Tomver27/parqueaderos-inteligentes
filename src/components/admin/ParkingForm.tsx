@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createParking, updateParking, type ParkingFormState } from "@/lib/actions/admin";
 import { Building2, MapPin, Plus, X } from "lucide-react";
 import type { Parking } from "@/types";
@@ -11,13 +12,16 @@ const INPUT_CLASS =
 
 interface Props {
   parking?: Parking;
+  defaultOpen?: boolean;
 }
 
-export default function ParkingForm({ parking }: Props) {
+export default function ParkingForm({ parking, defaultOpen = false }: Props) {
   const isCreating = !parking;
-  const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const [open, setOpen] = useState(defaultOpen);
   const [lat, setLat] = useState(parking?.latitude ?? "");
   const [lng, setLng] = useState(parking?.longitude ?? "");
+  const [pickerKey, setPickerKey] = useState(0);
 
   const action = isCreating ? createParking : updateParking;
   const [state, formAction, isPending] = useActionState<ParkingFormState, FormData>(
@@ -26,13 +30,22 @@ export default function ParkingForm({ parking }: Props) {
   );
 
   useEffect(() => {
-    if (state.success) setOpen(false);
+    if (state.success) handleClose();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.success]);
 
   function handleOpen() {
     setLat(parking?.latitude ?? "");
     setLng(parking?.longitude ?? "");
+    setPickerKey((k) => k + 1);
     setOpen(true);
+  }
+
+  function handleClose() {
+    setOpen(false);
+    if (typeof window !== "undefined" && window.location.search.includes("parqueadero")) {
+      router.replace("/admin/parqueaderos", { scroll: false });
+    }
   }
 
   if (!open) {
@@ -71,7 +84,7 @@ export default function ParkingForm({ parking }: Props) {
           </div>
           <button
             type="button"
-            onClick={() => setOpen(false)}
+            onClick={handleClose}
             className="text-slate-400 hover:text-white"
           >
             <X size={18} />
@@ -129,6 +142,7 @@ export default function ParkingForm({ parking }: Props) {
             </p>
             <div className="isolate h-56 rounded-lg overflow-hidden border border-white/[0.07]">
               <LocationPickerWrapper
+                key={pickerKey}
                 lat={hasCoords ? parsedLat : undefined}
                 lng={hasCoords ? parsedLng : undefined}
                 onChange={(la, ln) => {
@@ -154,7 +168,7 @@ export default function ParkingForm({ parking }: Props) {
           <div className="flex gap-3 pt-2">
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={handleClose}
               className="flex-1 rounded-xl px-4 py-2.5 text-sm text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.07] transition"
             >
               Cancelar

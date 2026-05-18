@@ -7,6 +7,8 @@ import {
   CalendarCheck,
   TrendingUp,
 } from "lucide-react";
+import AdminMapClient from "@/components/map/AdminMapClient";
+import type { Parking } from "@/types";
 
 async function getAdminStats() {
   const admin = createAdminClient();
@@ -46,7 +48,16 @@ async function getAdminStats() {
 }
 
 export default async function AdminDashboardPage() {
-  const stats = await getAdminStats();
+  const admin = createAdminClient();
+
+  const [stats, { data: parkings }] = await Promise.all([
+    getAdminStats(),
+    admin
+      .from("Parkings")
+      .select("id, name, latitude, longitude, address")
+      .order("name")
+      .returns<Parking[]>(),
+  ]);
 
   const cards = [
     {
@@ -88,7 +99,7 @@ export default async function AdminDashboardPage() {
         Resumen general de la plataforma
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
         {cards.map((card) => {
           const Icon = card.icon;
           return (
@@ -111,6 +122,17 @@ export default async function AdminDashboardPage() {
           );
         })}
       </div>
+
+      {parkings && parkings.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+            Parqueaderos
+          </h2>
+          <div className="isolate h-[400px] rounded-xl overflow-hidden border border-white/[0.07]">
+            <AdminMapClient parkings={parkings} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

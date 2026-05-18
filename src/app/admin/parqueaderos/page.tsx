@@ -5,7 +5,14 @@ import { Building2 } from "lucide-react";
 import ParkingForm from "@/components/admin/ParkingForm";
 import DeleteParkingButton from "@/components/admin/DeleteParkingButton";
 
-export default async function AdminParqueaderosPage() {
+export default async function AdminParqueaderosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ parqueadero?: string }>;
+}) {
+  const { parqueadero } = await searchParams;
+  const selectedId = parqueadero ? Number(parqueadero) : null;
+
   const admin = createAdminClient();
   const { data: parkings } = await admin
     .from("Parkings")
@@ -46,18 +53,20 @@ export default async function AdminParqueaderosPage() {
             <tbody>
               {parkings.map((p) => (
                 <tr key={p.id} className="border-b border-white/[0.05] hover:bg-white/[0.03]">
-                  <td className="px-4 py-3 font-medium flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shrink-0">
-                      <Building2 size={13} className="text-white" />
+                  <td className="px-4 py-3 font-medium">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shrink-0">
+                        <Building2 size={13} className="text-white" />
+                      </div>
+                      {p.name}
                     </div>
-                    {p.name}
                   </td>
                   <td className="px-4 py-3 text-slate-400">{p.address}</td>
                   <td className="px-4 py-3 text-slate-400 font-mono text-xs">{p.latitude}</td>
                   <td className="px-4 py-3 text-slate-400 font-mono text-xs">{p.longitude}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
-                      <ParkingForm parking={p} />
+                      <ParkingForm parking={p} defaultOpen={selectedId === p.id} />
                       <DeleteParkingButton parkingId={p.id} />
                     </div>
                   </td>

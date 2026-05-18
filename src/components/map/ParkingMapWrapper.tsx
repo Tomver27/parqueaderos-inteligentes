@@ -16,8 +16,16 @@ type Props = {
   parkings: Parking[];
   selectedParking?: ParkingWithSpaces | null;
   onSelect?: (p: ParkingWithSpaces) => void;
+  getDetailHref?: (id: number) => string;
 };
 
-export default function ParkingMapWrapper({ parkings, selectedParking, onSelect }: Props) {
-  return <ParkingMap parkings={parkings} selectedParking={selectedParking} onSelect={onSelect} />;
+export default function ParkingMapWrapper({ parkings, selectedParking, onSelect, getDetailHref }: Props) {
+  return (
+    <ParkingMap
+      parkings={parkings}
+      selectedParking={selectedParking}
+      onSelect={onSelect}
+      getDetailHref={getDetailHref}
+    />
+  );
 }
