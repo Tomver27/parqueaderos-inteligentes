@@ -18,10 +18,19 @@ export async function POST(req: Request) {
   const status = statusMap[transactionState ?? ""] ?? "error";
   const admin = createAdminClient();
 
-  await admin
+  const { data: payment } = await admin
     .from("Payments")
     .update({ status })
-    .eq("idempotency_key", referenceCode);
+    .eq("idempotency_key", referenceCode)
+    .select("id_reservation")
+    .single();
+
+  if (transactionState === "4" && payment?.id_reservation) {
+    await admin
+      .from("Reservations")
+      .update({ IS_PAID: true })
+      .eq("id", payment.id_reservation);
+  }
 
   return new Response("OK", { status: 200 });
 }

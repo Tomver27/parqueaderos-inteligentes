@@ -111,7 +111,7 @@ async function handlePlatePayload(payload: PlatePayload) {
 
   const { data: reservations } = await admin
     .from("Reservations")
-    .select("id, date, expires_at, id_space, id_car")
+    .select("id, date, expires_at, id_space, id_car, IS_PAID")
     .in("id_car", vehicleIds)
     .eq("taken", false)
     .order("date", { ascending: true });
@@ -139,6 +139,13 @@ async function handlePlatePayload(payload: PlatePayload) {
   if (!matchedReservation) {
     return NextResponse.json(
       { message: "No hay reserva vigente en la ventana horaria actual", plate },
+      { status: 200 },
+    );
+  }
+
+  if (!matchedReservation.IS_PAID) {
+    return NextResponse.json(
+      { message: "La reserva no ha sido pagada, acceso denegado", plate, reservation_id: matchedReservation.id },
       { status: 200 },
     );
   }
