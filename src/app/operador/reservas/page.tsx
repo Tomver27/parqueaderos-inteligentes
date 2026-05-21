@@ -29,7 +29,9 @@ async function getOperadorReservas(parkingIds: number[]) {
   const { data: reservas } = await admin
     .from("Reservations")
     .select(
-      "id, date, expires_at, taken, id_space, id_car, Spaces!inner ( name, id_parking ), Vehicle ( plate )",
+      `id, date, expires_at, taken, IS_PAID, id_space, id_car,
+       Spaces!inner ( name, id_parking ),
+       Vehicle ( plate, Users ( first_name, last_name ) )`,
     )
     .in("Spaces.id_parking", parkingIds)
     .order("date", { ascending: false })
@@ -100,7 +102,9 @@ export default async function OperadorReservasPage() {
                 <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Fecha</th>
                 <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Expira</th>
                 <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Espacio</th>
+                <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Conductor</th>
                 <th className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Vehículo</th>
+                <th className="text-center px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Pago</th>
                 <th className="text-center px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Estado</th>
                 <th className="text-center px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">Acciones</th>
               </tr>
@@ -110,6 +114,11 @@ export default async function OperadorReservasPage() {
                 const expiresAt = r.expires_at ? dbTs(r.expires_at) : null;
                 const expired = expiresAt ? expiresAt < new Date() : false;
                 const taken = !!r.taken;
+                const isPaid = !!r.IS_PAID;
+
+                const conductorName = r.Vehicle?.Users
+                  ? `${r.Vehicle.Users.first_name} ${r.Vehicle.Users.last_name}`.trim()
+                  : "—";
 
                 let statusLabel: string;
                 let statusClass: string;
@@ -138,11 +147,19 @@ export default async function OperadorReservasPage() {
                     <td className="px-4 py-3 text-slate-400">
                       {expiresAt ? fmtDateTimeCO(expiresAt) : "—"}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 font-medium">
                       {r.Spaces?.name ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-300">
+                      {conductorName}
                     </td>
                     <td className="px-4 py-3 text-slate-400">
                       {r.Vehicle?.plate ?? `ID ${r.id_car}`}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${isPaid ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"}`}>
+                        {isPaid ? "Pagado" : "Pendiente"}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${statusClass}`}>
