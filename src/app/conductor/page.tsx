@@ -2,6 +2,7 @@ import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { cleanExpiredPendingPayments } from "@/lib/actions/conductor";
 import { CalendarCheck, CarFront, CreditCard, MapPin, Clock } from "lucide-react";
 import { todayCO, tomorrowCO, fmtDateTimeCO, dbTs } from "@/lib/dates";
+import OccupationCountdown, { type TimerEntry } from "@/components/conductor/OccupationCountdown";
 
 async function getConductorStats(email: string) {
   const admin = createAdminClient();
@@ -84,6 +85,92 @@ async function getTodayReservations(email: string) {
   return data ?? [];
 }
 
+async function getActiveTimers(email: string): Promise<TimerEntry[]> {
+  const admin = createAdminClient();
+
+  const { data: user } = await admin
+    .from("Users")
+    .select("id")
+    .eq("email", email)
+    .single();
+  if (!user) return [];
+
+  const { data: vehicles } = await admin
+    .from("Vehicle")
+    .select("id")
+    .eq("id_user", user.id);
+
+  const vehicleIds = vehicles?.map((v) => v.id) ?? [];
+  if (vehicleIds.length === 0) return [];
+
+  const today = todayCO();
+  const tomorrow = tomorrowCO();
+
+  // Reservations taken today with confirmed payment
+  const { data: reservations } = await admin
+    .from("Reservations")
+    .select("id, id_space, Spaces ( name, id_parking, Parkings ( name ) )")
+    .in("id_car", vehicleIds)
+    .eq("taken", true)
+    .eq("IS_PAID", true)
+    .gte("date", today)
+    .lt("date", tomorrow);
+
+  if (!reservations || reservations.length === 0) return [];
+
+  const spaceIds = reservations.map((r) => r.id_space);
+  const reservationIds = reservations.map((r) => r.id);
+
+  const [occupations, payments, allParams] = await Promise.all([
+    // Active occupation on each space (sensor detected the car)
+    admin
+      .from("Occupations")
+      .select("id_space, start_date")
+      .in("id_space", spaceIds)
+      .is("end_date", null),
+    // Amount the conductor paid
+    admin
+      .from("Payments")
+      .select("id_reservation, amount")
+      .in("id_reservation", reservationIds)
+      .in("status", ["exitoso", "Pagado"]),
+    // Fee per minute for each parking
+    admin
+      .from("Parameters")
+      .select("id_parking, fee")
+      .in(
+        "id_parking",
+        [...new Set(reservations.map((r) => (r as any).Spaces?.id_parking).filter(Boolean))],
+      ),
+  ]);
+
+  const result: TimerEntry[] = [];
+
+  for (const r of reservations) {
+    const space = (r as any).Spaces;
+    const occupation = occupations.data?.find((o) => o.id_space === r.id_space);
+    if (!occupation) continue;
+
+    const payment = payments.data?.find((p) => p.id_reservation === r.id);
+    if (!payment) continue;
+
+    const param = allParams.data?.find((p) => p.id_parking === space?.id_parking);
+    if (!param || Number(param.fee) === 0) continue;
+
+    const totalMinutes = Number(payment.amount) / Number(param.fee);
+
+    result.push({
+      reservationId: r.id,
+      spaceName: space?.name ?? `#${r.id_space}`,
+      parkingName: space?.Parkings?.name ?? "—",
+      occupationStart: occupation.start_date,
+      totalMinutes,
+    });
+  }
+
+  return result;
+}
+
 export default async function ConductorDashboardPage() {
   const supabase = await createClient();
   const {
@@ -94,9 +181,10 @@ export default async function ConductorDashboardPage() {
     return <p className="text-slate-400">No se pudo obtener la sesión.</p>;
   }
 
-  const [stats, todayReservations] = await Promise.all([
+  const [stats, todayReservations, activeTimers] = await Promise.all([
     getConductorStats(user.email),
     getTodayReservations(user.email),
+    getActiveTimers(user.email),
   ]);
 
   if (!stats) {
@@ -156,6 +244,8 @@ export default async function ConductorDashboardPage() {
           );
         })}
       </div>
+
+      <OccupationCountdown timers={activeTimers} />
 
       {/* Today's reservations */}
       <div className="flex items-center gap-2 mb-4">
