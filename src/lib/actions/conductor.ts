@@ -58,11 +58,11 @@ export async function createReservaConductor(
   _prev: CreateReservaState,
   formData: FormData,
 ): Promise<CreateReservaState> {
-  const idSpace = Number(formData.get("id_space"));
+  const idParking = Number(formData.get("id_parking"));
   const idCar = Number(formData.get("id_car"));
   const dateStr = String(formData.get("date") ?? "").trim();
 
-  if (!idSpace || !idCar || !dateStr) {
+  if (!idParking || !idCar || !dateStr) {
     return { error: "Todos los campos son obligatorios." };
   }
 
@@ -101,26 +101,17 @@ export async function createReservaConductor(
     .single();
   if (!vehicle) return { error: "Vehículo no encontrado o no te pertenece." };
 
-  // Verify space exists and is bookable
-  const { data: space } = await admin
-    .from("Spaces")
-    .select("id, bookable, id_parking, name")
-    .eq("id", idSpace)
-    .single();
-  if (!space) return { error: "Espacio no encontrado." };
-  if (!space.bookable) return { error: "El espacio no es reservable." };
-
   const { data: parking } = await admin
     .from("Parkings")
     .select("name")
-    .eq("id", space.id_parking)
+    .eq("id", idParking)
     .single();
 
   // Get parking parameters
   const { data: params } = await admin
     .from("Parameters")
     .select("cost_reservation, expires_reservation, deadline_reservation")
-    .eq("id_parking", space.id_parking)
+    .eq("id_parking", idParking)
     .single();
   if (!params) return { error: "Parámetros no configurados para este parqueadero." };
 
@@ -135,10 +126,6 @@ export async function createReservaConductor(
 
   await cleanExpiredPendingPayments(admin);
 
-  // Reservations block the ENTIRE Colombia calendar day of their `date`.
-  // A reservation only blocks if: expires_at >= now AND taken = false.
-  // DB timestamps are stored as UTC via .toISOString() but returned without Z
-  // (TIMESTAMP WITHOUT TIME ZONE strips it). We re-add Z to parse as UTC.
   const toUTC = (s: string) =>
     new Date(s.endsWith("Z") || s.includes("+") ? s : s + "Z");
 
@@ -146,15 +133,36 @@ export async function createReservaConductor(
     timeZone: "America/Bogota",
   });
 
+  // Find all bookable spaces for this parking
+  const { data: allSpaces } = await admin
+    .from("Spaces")
+    .select("id, name")
+    .eq("id_parking", idParking)
+    .eq("bookable", true);
+
+  if (!allSpaces || allSpaces.length === 0) {
+    return { error: "No hay espacios reservables en este parqueadero." };
+  }
+
+  const spaceIds = allSpaces.map((s) => s.id);
+
+  // Find currently occupied spaces
+  const { data: occupiedRows } = await admin
+    .from("Occupations")
+    .select("id_space")
+    .in("id_space", spaceIds)
+    .is("end_date", null);
+  const occupiedIds = new Set((occupiedRows ?? []).map((o) => o.id_space));
+
+  // Find spaces already reserved for the requested day
   const { data: existingReservations } = await admin
     .from("Reservations")
-    .select("id, date, expires_at, taken")
-    .eq("id_space", idSpace)
+    .select("id, id_space, date, expires_at, taken")
+    .in("id_space", spaceIds)
     .eq("taken", false)
     .gte("expires_at", now.toISOString())
     .order("date", { ascending: false });
 
-  // Exclude reservations whose payment is rejected (cleanup may not have deleted them yet)
   const existingIds = (existingReservations ?? []).map((r) => r.id);
   const rejectedResIds = new Set<number>();
   if (existingIds.length > 0) {
@@ -169,17 +177,22 @@ export async function createReservaConductor(
     }
   }
 
+  const reservedSpaceIds = new Set<number>();
   for (const r of existingReservations ?? []) {
     if (rejectedResIds.has(r.id)) continue;
-    const rDay = toUTC(r.date).toLocaleDateString("en-CA", {
-      timeZone: "America/Bogota",
-    });
-    if (requestedDay === rDay) {
-      return {
-        error: `El espacio ya tiene una reserva vigente para el ${rDay}. Elige otro día u otro espacio.`,
-      };
-    }
+    const rDay = toUTC(r.date).toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+    if (requestedDay === rDay) reservedSpaceIds.add(r.id_space);
   }
+
+  // Pick a random available space
+  const availableSpaces = allSpaces.filter(
+    (s) => !occupiedIds.has(s.id) && !reservedSpaceIds.has(s.id),
+  );
+  if (availableSpaces.length === 0) {
+    return { error: "No hay espacios disponibles para la fecha y hora seleccionadas." };
+  }
+  const space = availableSpaces[Math.floor(Math.random() * availableSpaces.length)];
+  const idSpace = space.id;
 
   const expiresAt = new Date(
     reservationDate.getTime() + Number(params.expires_reservation) * 60_000,

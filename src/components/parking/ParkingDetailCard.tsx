@@ -5,6 +5,37 @@ import { motion, AnimatePresence } from "motion/react";
 import { MapPin, X, Car, ChevronRight } from "lucide-react";
 import type { ParkingWithSpaces } from "@/types";
 
+function Tooltip({ text }: { text: string }) {
+  return (
+    <div className="relative group inline-flex items-center ml-1">
+      <span
+        className="cursor-help inline-flex items-center justify-center rounded-full text-xs leading-none"
+        style={{
+          width: 14,
+          height: 14,
+          background: "rgba(100,116,139,0.25)",
+          color: "#64748b",
+          fontWeight: 700,
+          fontSize: 9,
+        }}
+      >
+        ?
+      </span>
+      <div
+        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 rounded-xl px-3 py-2 text-xs pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-20"
+        style={{
+          background: "#1e293b",
+          color: "#94a3b8",
+          border: "1px solid rgba(255,255,255,0.1)",
+          lineHeight: 1.5,
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
+
 export default function ParkingDetailCard({
   parking,
   onClose,
@@ -44,7 +75,9 @@ export default function ParkingDetailCard({
             <X size={16} style={{ color: "#64748b" }} />
           </button>
         </div>
+
         <div className="flex gap-4 mb-4">
+          {/* Puestos disponibles */}
           <div
             className="flex-1 p-3 rounded-xl text-center"
             style={{
@@ -59,12 +92,15 @@ export default function ParkingDetailCard({
                 color: "#10b981",
               }}
             >
-              {parking.totalSpots}
+              {parking.availableSpots}
             </p>
-            <p className="text-xs" style={{ color: "#64748b" }}>
-              espacios totales
-            </p>
+            <span className="text-xs flex items-center justify-center" style={{ color: "#64748b" }}>
+              Puestos disponibles
+              <Tooltip text="Puestos de uso libre (no reservables) que en este momento no tienen ningún vehículo dentro." />
+            </span>
           </div>
+
+          {/* Puestos reservables */}
           <div
             className="flex-1 p-3 rounded-xl text-center"
             style={{
@@ -79,13 +115,15 @@ export default function ParkingDetailCard({
                 color: "#60a5fa",
               }}
             >
-              {parking.spaces.length}
+              {parking.reservableSpots}
             </p>
-            <p className="text-xs" style={{ color: "#64748b" }}>
-              puestos registrados
+            <p className="text-xs flex items-center justify-center" style={{ color: "#64748b" }}>
+              Puestos reservables
+              <Tooltip text="Puestos habilitados para reserva web que aún no tienen una reserva activa para hoy." />
             </p>
           </div>
         </div>
+
         <Link
           href={`/reservar?parkingId=${parking.id}`}
           className="w-full py-3 rounded-xl transition-all hover:opacity-90 flex items-center justify-center gap-2 text-white"

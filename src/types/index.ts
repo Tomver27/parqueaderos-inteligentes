@@ -16,6 +16,8 @@ export type Space = {
 
 export type ParkingWithSpaces = Parking & {
   totalSpots: number;
+  availableSpots: number;
+  reservableSpots: number;
   spaces: Space[];
 };
 

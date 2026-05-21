@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Car, MapPin, ChevronRight } from "lucide-react";
+import { MapPin, ChevronRight } from "lucide-react";
 import type { ParkingWithSpaces } from "@/types";
 
 export default function ParkingListSidebar({
@@ -31,9 +31,7 @@ export default function ParkingListSidebar({
             onClick={() => onSelect(isSelected ? null : p)}
             className="w-full text-left rounded-2xl p-4 transition-all"
             style={{
-              background: isSelected
-                ? "rgba(59,130,246,0.15)"
-                : "#111827",
+              background: isSelected ? "rgba(59,130,246,0.15)" : "#111827",
               border: isSelected
                 ? "1px solid rgba(59,130,246,0.5)"
                 : "1px solid rgba(255,255,255,0.07)",
@@ -43,10 +41,7 @@ export default function ParkingListSidebar({
               <div className="flex items-center gap-2">
                 <span className="text-xl">🅿️</span>
                 <div>
-                  <p
-                    className="text-white text-sm"
-                    style={{ fontWeight: 600 }}
-                  >
+                  <p className="text-white text-sm" style={{ fontWeight: 600 }}>
                     {p.name}
                   </p>
                   <p className="text-xs flex items-center gap-1" style={{ color: "#64748b" }}>
@@ -55,26 +50,29 @@ export default function ParkingListSidebar({
                   </p>
                 </div>
               </div>
-              <div
-                className="px-2 py-1 rounded-lg text-xs flex-shrink-0"
-                style={{
-                  background: "rgba(16,185,129,0.15)",
-                  color: "#10b981",
-                  fontWeight: 700,
-                }}
-              >
-                {p.totalSpots} puestos
-              </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div
-                className="flex items-center gap-3 text-xs"
-                style={{ color: "#64748b" }}
-              >
-                <span className="flex items-center gap-1">
-                  <Car size={11} />
-                  {p.totalSpots} espacios totales
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex gap-2 text-xs">
+                <span
+                  className="px-2 py-1 rounded-lg"
+                  style={{
+                    background: "rgba(16,185,129,0.15)",
+                    color: "#10b981",
+                    fontWeight: 600,
+                  }}
+                >
+                  {p.availableSpots} libres
+                </span>
+                <span
+                  className="px-2 py-1 rounded-lg"
+                  style={{
+                    background: "rgba(59,130,246,0.15)",
+                    color: "#60a5fa",
+                    fontWeight: 600,
+                  }}
+                >
+                  {p.reservableSpots} reservables
                 </span>
               </div>
               <ChevronRight size={14} style={{ color: "#475569" }} />
