@@ -10,6 +10,7 @@
     "seed": "npx tsx scripts/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-iot-data-plane": "^3.1051.0",
     "@next/env": "^16.2.3",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",

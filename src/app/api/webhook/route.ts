@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { sendVehicleArrivedEmail } from "@/lib/email";
+import { IoTDataPlaneClient, PublishCommand } from "@aws-sdk/client-iot-data-plane";
 
 interface PlatePayload {
   plate: string;
@@ -163,6 +164,32 @@ async function handlePlatePayload(payload: PlatePayload) {
   sendVehicleArrivedEmail(admin, matchedReservation.id, plate).catch((e) =>
     console.error("[email] arrival error:", e),
   );
+
+  try {
+    const iotClient = new IoTDataPlaneClient({
+      region: process.env.AWS_REGION ?? "us-east-1",
+      endpoint: `https://${process.env.AWS_IOT_ENDPOINT}`,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      },
+    });
+
+    const mqttPayload = JSON.stringify({
+      action: "open",
+      id_space: matchedReservation.id_space,
+    });
+
+    await iotClient.send(
+      new PublishCommand({
+        topic: "talanquera/control",
+        payload: Buffer.from(mqttPayload),
+        qos: 1,
+      }),
+    );
+  } catch (mqttError) {
+    console.error("Error publicando a AWS IoT:", mqttError);
+  }
 
   return NextResponse.json({
     message: "Reserva marcada como tomada",
