@@ -55,14 +55,22 @@ async function sendConfirmationEmail(
     .eq("id", payment.id_reservation)
     .single();
 
-  if (!reservation) return;
+  if (!reservation) {
+    console.error("[email] reservation not found for id:", payment.id_reservation);
+    return;
+  }
 
   const space = (reservation as any).Spaces;
   const parking = space?.Parkings;
   const vehicle = (reservation as any).Vehicle;
   const conductor = vehicle?.Users;
 
-  if (!conductor?.email) return;
+  console.log("[email] space:", space?.name, "| parking:", parking?.name, "| conductor email:", conductor?.email);
+
+  if (!conductor?.email) {
+    console.error("[email] conductor email missing — check Vehicle→Users FK in Supabase");
+    return;
+  }
 
   // While using onboarding@resend.dev (shared domain), Resend only allows
   // sending to the account owner's email. RESEND_TO_OVERRIDE redirects all
@@ -76,7 +84,8 @@ async function sendConfirmationEmail(
   const conductorNombre = `${conductor.first_name} ${conductor.last_name}`.trim();
   const monto = Number(payment.amount).toLocaleString("es-CO");
 
-  await resend.emails.send({
+  const { data: emailData, error: emailError } = await resend.emails.send({
+
     from: "ParkGo <onboarding@resend.dev>",
     to: [toEmail],
     subject: `✅ Reserva confirmada — ${space?.name ?? "espacio asignado"}`,
@@ -133,6 +142,12 @@ async function sendConfirmationEmail(
 </body>
 </html>`,
   });
+
+  if (emailError) {
+    console.error("[email] Resend error:", emailError);
+  } else {
+    console.log("[email] sent ok, id:", emailData?.id, "→", toEmail);
+  }
 }
 
 function row(label: string, value: string): string {

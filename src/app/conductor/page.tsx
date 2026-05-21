@@ -73,7 +73,7 @@ async function getTodayReservations(email: string) {
     .from("Reservations")
     .select(`
       id, date, expires_at, taken, IS_PAID,
-      Spaces ( name, Parkings ( name ) ),
+      Spaces ( name, Parkings ( name, address, latitude, longitude ) ),
       Vehicle ( plate )
     `)
     .in("id_car", vehicleIds)
@@ -198,7 +198,12 @@ export default async function ConductorDashboardPage() {
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
                       <span className="text-white font-bold text-lg">
-                        {r.Spaces?.name ?? `Espacio #${r.id}`}
+                        {[
+                          (r.Spaces as any)?.Parkings?.name,
+                          r.Spaces?.name,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ") || `Espacio #${r.id}`}
                       </span>
                       <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium border ${statusColor}`}>
                         {statusLabel}
@@ -208,10 +213,31 @@ export default async function ConductorDashboardPage() {
                       </span>
                     </div>
 
-                    <p className="text-sm text-slate-400 flex items-center gap-1.5">
-                      <MapPin size={13} />
-                      {(r.Spaces as any)?.Parkings?.name ?? "Parqueadero"}
-                    </p>
+                    {(() => {
+                      const p = (r.Spaces as any)?.Parkings;
+                      const mapsUrl = p?.latitude && p?.longitude
+                        ? `https://www.google.com/maps?q=${p.latitude},${p.longitude}`
+                        : null;
+                      return (
+                        <div className="flex items-center gap-1.5">
+                          <MapPin size={13} className="text-slate-500 flex-shrink-0" />
+                          {mapsUrl ? (
+                            <a
+                              href={mapsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-slate-400 hover:text-blue-400 hover:underline transition-colors"
+                            >
+                              {p?.address ?? "Ver ubicación"}
+                            </a>
+                          ) : (
+                            <span className="text-sm text-slate-400">
+                              {p?.address ?? "—"}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     <div className="flex flex-wrap gap-4 text-xs text-slate-500 mt-1">
                       <span className="flex items-center gap-1">
