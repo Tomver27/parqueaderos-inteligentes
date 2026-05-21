@@ -144,18 +144,21 @@ export default async function OperadorDashboardPage() {
       value: stats.espaciosTotal,
       icon: ParkingSquare,
       color: "from-violet-500 to-purple-500",
+      tooltip: "Cantidad total de espacios registrados en el parqueadero, incluyendo reservables y de uso libre.",
     },
     {
       label: "Ocupados ahora",
       value: stats.ocupados,
       icon: TrendingUp,
       color: "from-rose-500 to-pink-500",
+      tooltip: "Espacios con una ocupación activa en este momento, detectada por sensor. No incluye espacios con reserva sin ocupación física.",
     },
     {
       label: "Reservas hoy",
       value: stats.reservasHoy,
       icon: CalendarCheck,
       color: "from-amber-500 to-orange-500",
+      tooltip: "Total de reservas cuya fecha de inicio corresponde al día de hoy (hora Colombia), sin importar si ya fueron tomadas o están pendientes.",
     },
   ];
 
@@ -177,9 +180,25 @@ export default async function OperadorDashboardPage() {
               className="rounded-xl border border-white/[0.07] bg-[#0f172a] p-5"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">
-                  {card.label}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">
+                    {card.label}
+                  </span>
+                  <div className="relative group">
+                    <span
+                      className="cursor-help inline-flex items-center justify-center rounded-full text-slate-600 hover:text-slate-400 transition-colors"
+                      style={{ width: 14, height: 14, fontSize: 9, fontWeight: 700, background: "rgba(100,116,139,0.15)" }}
+                    >
+                      ?
+                    </span>
+                    <div
+                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 rounded-xl px-3 py-2 text-xs pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                      style={{ background: "#1e293b", color: "#94a3b8", border: "1px solid rgba(255,255,255,0.1)", lineHeight: 1.5 }}
+                    >
+                      {card.tooltip}
+                    </div>
+                  </div>
+                </div>
                 <div
                   className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br ${card.color}`}
                 >
