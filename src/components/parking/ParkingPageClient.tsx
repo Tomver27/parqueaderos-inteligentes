@@ -58,13 +58,13 @@ export default function ParkingPageClient({
         />
 
         {/* Map + detail */}
-        <div className="flex-1 order-1 lg:order-2 flex flex-col gap-4">
-          {/* Map */}
+        <div className="lg:flex-1 order-1 lg:order-2 flex flex-col gap-4">
+          {/* Map — altura explícita para que Leaflet pueda leer offsetHeight al montar */}
           <div
-            className="flex-1 rounded-2xl overflow-hidden"
+            className="rounded-2xl overflow-hidden w-full"
             style={{
               border: "1px solid rgba(255,255,255,0.1)",
-              minHeight: 420,
+              height: "clamp(320px, 45vh, 560px)",
             }}
           >
             <ParkingMapWrapper
