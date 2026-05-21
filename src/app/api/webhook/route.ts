@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { sendVehicleArrivedEmail } from "@/lib/email";
 
 interface PlatePayload {
   plate: string;
@@ -158,6 +159,10 @@ async function handlePlatePayload(payload: PlatePayload) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  sendVehicleArrivedEmail(admin, matchedReservation.id, plate).catch((e) =>
+    console.error("[email] arrival error:", e),
+  );
 
   return NextResponse.json({
     message: "Reserva marcada como tomada",

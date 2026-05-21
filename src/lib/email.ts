@@ -149,6 +149,108 @@ function buildEmailHtml(d: {
 </html>`;
 }
 
+/**
+ * Sends an arrival notification to both the conductor and the parking operator
+ * when the ANPR camera detects a plate and marks the reservation as taken.
+ */
+export async function sendVehicleArrivedEmail(
+  admin: ReturnType<typeof createAdminClient>,
+  reservationId: number,
+  plate: string,
+) {
+  const { data: reservation } = await admin
+    .from("Reservations")
+    .select(`
+      id, date, expires_at,
+      Spaces ( name, id_parking, Parkings ( name, address ) ),
+      Vehicle ( plate, Users ( first_name, last_name, email ) )
+    `)
+    .eq("id", reservationId)
+    .single();
+
+  if (!reservation) return;
+
+  const space = (reservation as any).Spaces;
+  const parking = space?.Parkings;
+  const vehicle = (reservation as any).Vehicle;
+  const conductor = vehicle?.Users;
+  const idParking = space?.id_parking;
+
+  // Get operator email for this parking
+  let operatorEmail: string | null = null;
+  if (idParking) {
+    const { data: operatorAssignment } = await admin
+      .from("ParkingOperators")
+      .select("Users ( email )")
+      .eq("id_parking", idParking)
+      .limit(1)
+      .single();
+    operatorEmail = (operatorAssignment as any)?.Users?.email ?? null;
+  }
+
+  const arrivedAt = new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" });
+  const fechaReserva = fmtDateTimeCO(dbTs(reservation.date));
+  const conductorNombre = conductor
+    ? `${conductor.first_name} ${conductor.last_name}`.trim()
+    : plate;
+
+  const recipients: string[] = [];
+  if (process.env.RESEND_TO_OVERRIDE) {
+    recipients.push(process.env.RESEND_TO_OVERRIDE);
+  } else {
+    if (conductor?.email) recipients.push(conductor.email);
+    if (operatorEmail) recipients.push(operatorEmail);
+  }
+
+  if (recipients.length === 0) {
+    console.error("[email] no recipients for arrival notification");
+    return;
+  }
+
+  const { data: emailData, error: emailError } = await resend.emails.send({
+    from: "ParkGo <onboarding@resend.dev>",
+    to: recipients,
+    subject: `🚗 Vehículo ${plate} ingresó — ${space?.name ?? "plaza"}`,
+    html: `<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#0b1120;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:560px;margin:40px auto;background:#111827;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
+    <div style="background:linear-gradient(135deg,#10b981,#0891b2);padding:32px 32px 24px;">
+      <p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,0.7);text-transform:uppercase;">ParkGo · Acceso</p>
+      <h1 style="margin:0;font-size:22px;font-weight:800;color:#fff;">Vehículo ingresó al parqueadero</h1>
+      <p style="margin:8px 0 0;font-size:14px;color:rgba(255,255,255,0.8);">Placa detectada por cámara ANPR. Reserva marcada como tomada.</p>
+    </div>
+    <div style="padding:28px 32px;">
+      <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:12px;padding:16px 20px;margin-bottom:20px;text-align:center;">
+        <p style="margin:0 0 4px;font-size:11px;color:#34d399;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Placa detectada</p>
+        <p style="margin:0;font-size:36px;font-weight:900;color:#fff;letter-spacing:4px;">${plate}</p>
+        <p style="margin:4px 0 0;font-size:13px;color:#64748b;">${conductorNombre}</p>
+      </div>
+      <table style="width:100%;border-collapse:collapse;">
+        ${row("Parqueadero", parking?.name ?? "—")}
+        ${row("Plaza asignada", space?.name ?? "—")}
+        ${row("Dirección", parking?.address ?? "—")}
+        ${row("Hora de ingreso", arrivedAt)}
+        ${row("Fecha de reserva", fechaReserva)}
+        ${row("ID de reserva", `#${reservation.id}`)}
+      </table>
+    </div>
+    <div style="padding:16px 32px 24px;border-top:1px solid rgba(255,255,255,0.06);">
+      <p style="margin:0;font-size:12px;color:#475569;text-align:center;">ParkGo · Sistema de parqueaderos inteligentes</p>
+    </div>
+  </div>
+</body>
+</html>`,
+  });
+
+  if (emailError) {
+    console.error("[email] arrival Resend error:", emailError);
+  } else {
+    console.log("[email] arrival sent ok, id:", emailData?.id, "→", recipients.join(", "));
+  }
+}
+
 function row(label: string, value: string): string {
   return `<tr>
     <td style="padding:10px 0;font-size:12px;color:#64748b;border-bottom:1px solid rgba(255,255,255,0.05);width:45%;">${label}</td>
