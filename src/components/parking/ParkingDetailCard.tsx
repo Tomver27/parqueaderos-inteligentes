@@ -117,10 +117,10 @@ export default function ParkingDetailCard({
             >
               {parking.reservableSpots}
             </p>
-            <p className="text-xs flex items-center justify-center" style={{ color: "#64748b" }}>
+            <span className="text-xs flex items-center justify-center" style={{ color: "#64748b" }}>
               Puestos reservables
               <Tooltip text="Puestos habilitados para reserva web que aún no tienen una reserva activa para hoy." />
-            </p>
+            </span>
           </div>
         </div>
 
