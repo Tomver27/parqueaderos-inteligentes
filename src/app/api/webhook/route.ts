@@ -116,6 +116,7 @@ async function handlePlatePayload(payload: PlatePayload) {
     .select("id, date, expires_at, id_space, id_car, IS_PAID")
     .in("id_car", vehicleIds)
     .eq("taken", false)
+    .eq("IS_PAID", true)
     .order("date", { ascending: true });
 
   if (!reservations || reservations.length === 0) {
