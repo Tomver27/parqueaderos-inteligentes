@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/server";
+import { confirmPaymentAndNotify } from "@/lib/email";
 import { fmtDateTimeCO } from "@/lib/dates";
 
 const statusMap: Record<string, string> = {
@@ -13,10 +14,19 @@ async function syncAndGetPayment(referenceCode: string, transactionState: string
 
   const newStatus = statusMap[transactionState] ?? "error";
   if (newStatus !== "pendiente" && newStatus !== "error") {
-    await admin
+    const { data: updatedPayment } = await admin
       .from("Payments")
       .update({ status: newStatus })
-      .eq("idempotency_key", referenceCode);
+      .eq("idempotency_key", referenceCode)
+      .select("id, id_reservation, amount, currency, id_car")
+      .single();
+
+    // Fallback: confirmacion webhook may not reach localhost, so we
+    // handle IS_PAID + email here too. confirmPaymentAndNotify guards
+    // against double execution if the webhook already ran.
+    if (transactionState === "4" && updatedPayment?.id_reservation) {
+      await confirmPaymentAndNotify(admin, updatedPayment as any);
+    }
   }
 
   const { data } = await admin
