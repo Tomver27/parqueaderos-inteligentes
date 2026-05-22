@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { UserPlus, ChevronDown, ChevronUp, Mail } from "lucide-react";
 import { inviteOperador } from "@/lib/actions/admin";
+import Spinner from "@/components/ui/Spinner";
 import type { InviteState } from "@/types";
 
 const INPUT_CLASS =
@@ -249,7 +250,7 @@ export default function InviteOperadorForm({ parkings }: Props) {
                     background: "linear-gradient(135deg, #3b82f6, #06b6d4)",
                   }}
                 >
-                  <Mail size={14} />
+                  {pending ? <Spinner size={14} /> : <Mail size={14} />}
                   {pending ? "Enviando..." : "Enviar invitación"}
                 </button>
               </div>

@@ -10,6 +10,7 @@ import {
   Mail,
   MapPin,
 } from "lucide-react";
+import Spinner from "@/components/ui/Spinner";
 import { createReservaConductor } from "@/lib/actions/conductor";
 import PayUCheckout from "@/components/PayUCheckout";
 import type {
@@ -360,7 +361,7 @@ export default function ReservarPageClient({
                     className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
                     style={{ background: "linear-gradient(135deg,#3b82f6,#06b6d4)" }}
                   >
-                    {pending ? "Reservando…" : "Confirmar reserva"}
+                    {pending ? <><Spinner size={14} /> Reservando…</> : "Confirmar reserva"}
                   </button>
 
                   {availableCount === 0 && spaces.length > 0 && (

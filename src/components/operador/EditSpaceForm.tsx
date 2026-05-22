@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { updateSpace, createSpace, type SpaceFormState } from "@/lib/actions/operador";
 import { X } from "lucide-react";
+import Spinner from "@/components/ui/Spinner";
 
 interface Space {
   id: number;
@@ -158,7 +159,7 @@ export default function EditSpaceForm({
               disabled={isPending}
               className="flex-1 px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 transition disabled:opacity-50"
             >
-              {isPending ? "Guardando..." : "Guardar"}
+              {isPending ? <><Spinner size={14} /> Guardando...</> : "Guardar"}
             </button>
           </div>
         </form>

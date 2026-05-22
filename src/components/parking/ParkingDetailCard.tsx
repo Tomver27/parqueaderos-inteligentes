@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MapPin, X, Car, ChevronRight } from "lucide-react";
 import type { ParkingWithSpaces } from "@/types";
+import Spinner from "@/components/ui/Spinner";
 
 function Tooltip({ text }: { text: string }) {
   return (
@@ -43,6 +45,14 @@ export default function ParkingDetailCard({
   parking: ParkingWithSpaces;
   onClose: () => void;
 }) {
+  const router = useRouter();
+  const [navigating, setNavigating] = useState(false);
+
+  function handleReservar() {
+    setNavigating(true);
+    router.push(`/reservar?parkingId=${parking.id}`);
+  }
+
   return (
     <AnimatePresence>
       <motion.div
@@ -124,18 +134,19 @@ export default function ParkingDetailCard({
           </div>
         </div>
 
-        <Link
-          href={`/reservar?parkingId=${parking.id}`}
-          className="w-full py-3 rounded-xl transition-all hover:opacity-90 flex items-center justify-center gap-2 text-white"
+        <button
+          onClick={handleReservar}
+          disabled={navigating}
+          className="w-full py-3 rounded-xl transition-all hover:opacity-90 disabled:opacity-70 flex items-center justify-center gap-2 text-white"
           style={{
             background: "linear-gradient(135deg,#3b82f6,#06b6d4)",
             fontWeight: 700,
           }}
         >
-          <Car size={18} />
-          Ver puestos disponibles y reservar
-          <ChevronRight size={16} />
-        </Link>
+          {navigating ? <Spinner size={18} /> : <Car size={18} />}
+          {navigating ? "Cargando…" : "Ver puestos disponibles y reservar"}
+          {!navigating && <ChevronRight size={16} />}
+        </button>
       </motion.div>
     </AnimatePresence>
   );

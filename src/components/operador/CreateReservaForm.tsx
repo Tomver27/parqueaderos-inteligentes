@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { Plus, X, Check, CalendarPlus } from "lucide-react";
 import { createReserva } from "@/lib/actions/operador";
+import Spinner from "@/components/ui/Spinner";
 import type { CreateReservaState } from "@/types";
 
 type SpaceOption = { id: number; name: string };
@@ -174,7 +175,7 @@ export default function CreateReservaForm({
             className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
             style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)" }}
           >
-            <CalendarPlus size={13} />
+            {pending ? <Spinner size={13} /> : <CalendarPlus size={13} />}
             {pending ? "Creando…" : "Crear reserva"}
           </button>
         </div>

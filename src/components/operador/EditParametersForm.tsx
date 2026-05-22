@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { Pencil, Save, X, Check } from "lucide-react";
 import { updateParameters } from "@/lib/actions/operador";
+import Spinner from "@/components/ui/Spinner";
 import type { UpdateParamsState, ParkingParams } from "@/types";
 
 const INPUT_CLASS =
@@ -149,7 +150,7 @@ export default function EditParametersForm({ params }: { params: ParkingParams }
             className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
             style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)" }}
           >
-            <Save size={13} />
+            {pending ? <Spinner size={13} /> : <Save size={13} />}
             {pending ? "Guardando..." : "Guardar"}
           </button>
         </div>

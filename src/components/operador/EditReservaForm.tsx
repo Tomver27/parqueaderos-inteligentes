@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { Pencil, X } from "lucide-react";
 import { updateReserva, type ReservaFormState } from "@/lib/actions/operador";
+import Spinner from "@/components/ui/Spinner";
 import { dbTs } from "@/lib/dates";
 
 type SpaceOption = { id: number; name: string };
@@ -136,7 +137,7 @@ export default function EditReservaForm({
               className="flex-1 px-4 py-2 rounded text-white transition disabled:opacity-50 text-sm font-semibold"
               style={{ background: "linear-gradient(135deg, #8b5cf6, #6d28d9)" }}
             >
-              {isPending ? "Guardando…" : "Guardar"}
+              {isPending ? <><Spinner size={14} /> Guardando…</> : "Guardar"}
             </button>
           </div>
         </form>

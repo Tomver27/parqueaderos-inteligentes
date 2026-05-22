@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { deleteParking, type ParkingFormState } from "@/lib/actions/admin";
 import { Trash2 } from "lucide-react";
+import Spinner from "@/components/ui/Spinner";
 
 export default function DeleteParkingButton({ parkingId }: { parkingId: number }) {
   const [state, formAction, isPending] = useActionState<ParkingFormState, FormData>(
@@ -26,7 +27,7 @@ export default function DeleteParkingButton({ parkingId }: { parkingId: number }
         disabled={isPending}
         className="px-3 py-1 rounded text-sm bg-red-500/15 text-red-400 hover:bg-red-500/25 transition disabled:opacity-50"
       >
-        {isPending ? "..." : <Trash2 size={15} />}
+        {isPending ? <Spinner size={14} /> : <Trash2 size={15} />}
       </button>
     </form>
   );

@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { UserPlus } from "lucide-react";
 import { signUp } from "@/lib/actions/auth";
+import Spinner from "@/components/ui/Spinner";
 
 const INPUT_CLASS =
   "rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-all placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/40";
@@ -126,7 +127,7 @@ export default function RegisterForm() {
           fontWeight: 600,
         }}
       >
-        <UserPlus size={16} />
+        {pending ? <Spinner /> : <UserPlus size={16} />}
         {pending ? "Creando cuenta..." : "Crear cuenta"}
       </button>
 

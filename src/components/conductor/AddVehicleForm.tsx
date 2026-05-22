@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { Car, Check, Plus, X } from "lucide-react";
 import { addVehicle } from "@/lib/actions/conductor";
+import Spinner from "@/components/ui/Spinner";
 import type { AddVehicleState, TypeVehicle } from "@/types";
 
 const INPUT_CLASS =
@@ -148,7 +149,7 @@ export default function AddVehicleForm({
               className="flex-1 rounded-lg py-2 text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
               style={{ background: "linear-gradient(135deg, #10b981, #0891b2)" }}
             >
-              {pending ? "Guardando…" : "Guardar"}
+              {pending ? <><Spinner size={14} /> Guardando…</> : "Guardar"}
             </button>
           </div>
         </form>

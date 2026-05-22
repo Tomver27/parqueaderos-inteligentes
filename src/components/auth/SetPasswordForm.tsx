@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { KeyRound } from "lucide-react";
 import { setPassword } from "@/lib/actions/auth";
+import Spinner from "@/components/ui/Spinner";
 import type { ActionState } from "@/lib/actions/auth";
 
 const INPUT_CLASS =
@@ -77,7 +78,7 @@ export default function SetPasswordForm() {
           fontWeight: 600,
         }}
       >
-        <KeyRound size={16} />
+        {pending ? <Spinner /> : <KeyRound size={16} />}
         {pending ? "Guardando..." : "Guardar contraseña"}
       </button>
     </form>

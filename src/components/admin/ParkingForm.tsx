@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createParking, updateParking, type ParkingFormState } from "@/lib/actions/admin";
 import { Building2, MapPin, Plus, X } from "lucide-react";
+import Spinner from "@/components/ui/Spinner";
 import type { Parking } from "@/types";
 import LocationPickerWrapper from "@/components/map/LocationPickerWrapper";
 
@@ -179,7 +180,7 @@ export default function ParkingForm({ parking, defaultOpen = false }: Props) {
               className="flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
               style={{ background: "linear-gradient(135deg, #3b82f6, #06b6d4)" }}
             >
-              {isPending ? "Guardando..." : isCreating ? "Crear" : "Guardar"}
+              {isPending ? <><Spinner size={14} /> Guardando...</> : isCreating ? "Crear" : "Guardar"}
             </button>
           </div>
         </form>

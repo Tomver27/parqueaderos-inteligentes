@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { deleteReserva, type ReservaFormState } from "@/lib/actions/operador";
 import { Trash2 } from "lucide-react";
+import Spinner from "@/components/ui/Spinner";
 
 export default function DeleteReservaButton({ reservaId }: { reservaId: number }) {
   const [state, formAction, isPending] = useActionState<ReservaFormState, FormData>(
@@ -28,7 +29,7 @@ export default function DeleteReservaButton({ reservaId }: { reservaId: number }
         disabled={isPending}
         className="px-3 py-1 rounded text-sm bg-red-500/15 text-red-400 hover:bg-red-500/25 transition disabled:opacity-50"
       >
-        {isPending ? "…" : <Trash2 size={14} />}
+        {isPending ? <Spinner size={14} /> : <Trash2 size={14} />}
       </button>
     </form>
   );

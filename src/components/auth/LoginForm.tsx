@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { LogIn } from "lucide-react";
 import { signIn } from "@/lib/actions/auth";
+import Spinner from "@/components/ui/Spinner";
 
 const INPUT_CLASS =
   "rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-all placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/40";
@@ -67,7 +68,7 @@ export default function LoginForm() {
           fontWeight: 600,
         }}
       >
-        <LogIn size={16} />
+        {pending ? <Spinner /> : <LogIn size={16} />}
         {pending ? "Ingresando..." : "Ingresar"}
       </button>
 
