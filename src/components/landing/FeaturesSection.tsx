@@ -1,7 +1,11 @@
 "use client";
 
-import { motion } from "motion/react";
+import { useRef, useEffect } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Wifi, Cpu, MapPin, Clock, Zap, Smartphone } from "lucide-react";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const features = [
   {
@@ -43,8 +47,32 @@ const features = [
 ];
 
 export default function FeaturesSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const cards = gsap.utils.toArray<HTMLElement>(".feature-card", sectionRef.current!);
+      gsap.set(cards, { opacity: 0, y: 40 });
+
+      ScrollTrigger.batch(cards, {
+        onEnter: (batch) =>
+          gsap.to(batch, {
+            opacity: 1,
+            y: 0,
+            duration: 0.65,
+            stagger: 0.09,
+            ease: "power3.out",
+            overwrite: true,
+          }),
+        start: "top 88%",
+      });
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section className="py-24 max-w-7xl mx-auto px-6">
+    <section ref={sectionRef} className="py-24 max-w-7xl mx-auto px-6">
       <div className="text-center mb-16">
         <p
           className="text-sm uppercase tracking-widest mb-3"
@@ -72,16 +100,14 @@ export default function FeaturesSection() {
           urbano.
         </p>
       </div>
+
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {features.map((f, i) => {
+        {features.map((f) => {
           const Icon = f.icon;
           return (
-            <motion.div
+            <div
               key={f.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
-              className="p-6 rounded-2xl transition-all hover:scale-[1.02]"
+              className="feature-card p-6 rounded-2xl transition-all hover:scale-[1.02]"
               style={{
                 background: "#111827",
                 border: "1px solid rgba(255,255,255,0.07)",
@@ -105,7 +131,7 @@ export default function FeaturesSection() {
               >
                 {f.desc}
               </p>
-            </motion.div>
+            </div>
           );
         })}
       </div>

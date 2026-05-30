@@ -1,15 +1,38 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
-import { MapPin, Smartphone, ChevronRight } from "lucide-react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { MapPin, ChevronRight } from "lucide-react";
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function CTASection() {
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.set(boxRef.current, { opacity: 0, y: 50 });
+      gsap.to(boxRef.current, {
+        opacity: 1,
+        y: 0,
+        duration: 0.9,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: boxRef.current,
+          start: "top 85%",
+        },
+      });
+    });
+
+    return () => ctx.revert();
+  }, []);
+
   return (
     <section className="py-24 px-6">
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
+      <div
+        ref={boxRef}
         className="max-w-4xl mx-auto text-center rounded-3xl p-16 relative overflow-hidden"
         style={{
           background: "linear-gradient(135deg, #1e3a5f 0%, #0f2942 100%)",
@@ -56,7 +79,7 @@ export default function CTASection() {
             </Link>
           </div>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }

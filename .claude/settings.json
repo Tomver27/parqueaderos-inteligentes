@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(nvm list *)",
+      "Bash(ls /usr/local/bin/node* 2>/dev/null; ls ~/.nvm 2>/dev/null; ls /opt/node* 2>/dev/null; which node20 2>/dev/null; ls /usr/bin/node* 2>/dev/null)",
+      "Read(//opt/**)"
+    ]
+  }
+}

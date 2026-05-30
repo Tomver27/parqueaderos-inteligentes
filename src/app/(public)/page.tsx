@@ -12,13 +12,15 @@ export default async function LandingPage() {
   return (
     <div className="text-white">
       <HeroSection stats={stats} />
+      {/*
+      <StatsSection />
+      */}
+      <HowItWorksSection />
+      <FeaturesSection />
+      <CTASection />
       <div className="flex justify-center py-4">
         <SensorInfrarrojo />
       </div>
-      <StatsSection />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <CTASection />
     </div>
   );
 }
