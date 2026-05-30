@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import Spinner from "@/components/ui/Spinner";
 
 export type NavItem = {
   label: string;
@@ -22,7 +23,7 @@ export type NavItem = {
 type Props = {
   navItems: NavItem[];
   roleLabel: string;
-  roleColor: string; // tailwind gradient e.g. "from-blue-500 to-cyan-500"
+  roleColor: string;
   children: React.ReactNode;
 };
 
@@ -36,6 +37,10 @@ export default function DashboardSidebar({
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [firstName, setFirstName] = useState<string | null>(null);
+  const [loadingPath, setLoadingPath] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const isLoading = loadingPath !== null || signingOut;
 
   useEffect(() => {
     fetch("/api/me")
@@ -44,7 +49,24 @@ export default function DashboardSidebar({
       .catch(() => setFirstName(null));
   }, []);
 
+  useEffect(() => {
+    setLoadingPath(null);
+    setSigningOut(false);
+    window.dispatchEvent(new Event("app:navigate:end"));
+  }, [pathname]);
+
+  function handleNavigate(path: string) {
+    if (isLoading) return;
+    setSidebarOpen(false);
+    setLoadingPath(path);
+    window.dispatchEvent(new Event("app:navigate:start"));
+    router.push(path);
+  }
+
   async function handleSignOut() {
+    if (isLoading) return;
+    setSigningOut(true);
+    window.dispatchEvent(new Event("app:navigate:start"));
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/");
@@ -106,25 +128,26 @@ export default function DashboardSidebar({
             const active =
               pathname === item.href ||
               (item.href.split("/").length >= 3 && pathname.startsWith(item.href));
+            const navigating = loadingPath === item.href;
 
             return (
-              <Link
+              <button
                 key={item.href}
-                href={item.href}
-                onClick={() => setSidebarOpen(false)}
+                onClick={() => handleNavigate(item.href)}
+                disabled={isLoading}
                 className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                  transition-colors
+                  w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                  transition-colors disabled:cursor-not-allowed
                   ${
                     active
                       ? `bg-gradient-to-r ${roleColor} text-white`
-                      : "text-slate-400 hover:text-white hover:bg-white/[0.06]"
+                      : "text-slate-400 hover:text-white hover:bg-white/[0.06] disabled:opacity-50"
                   }
                 `}
               >
-                <Icon size={18} />
+                {navigating ? <Spinner size={18} /> : <Icon size={18} />}
                 {item.label}
-              </Link>
+              </button>
             );
           })}
         </nav>
@@ -139,24 +162,26 @@ export default function DashboardSidebar({
               <span className="truncate">{firstName}</span>
             </div>
           )}
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+          <button
+            onClick={() => handleNavigate("/")}
+            disabled={isLoading}
+            className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <ChevronLeft size={14} />
+            {loadingPath === "/" ? <Spinner size={14} /> : <ChevronLeft size={14} />}
             Volver al inicio
-          </Link>
+          </button>
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer"
+            disabled={isLoading}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
               background: "rgba(239,68,68,0.12)",
               color: "#f87171",
               border: "1px solid rgba(239,68,68,0.2)",
             }}
           >
-            <LogOut size={14} />
-            Cerrar sesión
+            {signingOut ? <Spinner size={14} /> : <LogOut size={14} />}
+            {signingOut ? "Cerrando sesión…" : "Cerrar sesión"}
           </button>
         </div>
       </aside>
