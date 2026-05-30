@@ -6,37 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { MapPin, X, Car, ChevronRight } from "lucide-react";
 import type { ParkingWithSpaces } from "@/types";
 import Spinner from "@/components/ui/Spinner";
-
-function Tooltip({ text }: { text: string }) {
-  return (
-    <div className="relative group inline-flex items-center ml-1">
-      <span
-        className="cursor-help inline-flex items-center justify-center rounded-full text-xs leading-none"
-        style={{
-          width: 14,
-          height: 14,
-          background: "rgba(100,116,139,0.25)",
-          color: "#64748b",
-          fontWeight: 700,
-          fontSize: 9,
-        }}
-      >
-        ?
-      </span>
-      <div
-        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 rounded-xl px-3 py-2 text-xs pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-20"
-        style={{
-          background: "#1e293b",
-          color: "#94a3b8",
-          border: "1px solid rgba(255,255,255,0.1)",
-          lineHeight: 1.5,
-        }}
-      >
-        {text}
-      </div>
-    </div>
-  );
-}
+import Tooltip from "@/components/ui/Tooltip";
 
 export default function ParkingDetailCard({
   parking,

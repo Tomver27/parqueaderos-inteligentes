@@ -1,9 +1,14 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Wifi, MapPin } from "lucide-react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { ParkingStats } from "@/lib/queries/stats";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const PARKING_IMG =
   "https://images.unsplash.com/photo-1628620600676-4a3481c08021?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1cmJhbiUyMHBhcmtpbmclMjBsb3QlMjBtb2Rlcm4lMjBjaXR5fGVufDF8fHx8MTc3Mjg5OTE1M3ww&ixlib=rb-4.1.0&q=80&w=1080";
@@ -37,10 +42,42 @@ function CalendarCheck({
 }
 
 export default function HeroSection({ stats }: { stats: ParkingStats }) {
+  const heroRef = useRef<HTMLElement>(null);
+  const bgGradientRef = useRef<HTMLDivElement>(null);
+  const bgGridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.to(bgGradientRef.current, {
+        y: 80,
+        ease: "none",
+        scrollTrigger: {
+          trigger: heroRef.current,
+          start: "top top",
+          end: "bottom top",
+          scrub: true,
+        },
+      });
+      gsap.to(bgGridRef.current, {
+        y: 40,
+        ease: "none",
+        scrollTrigger: {
+          trigger: heroRef.current,
+          start: "top top",
+          end: "bottom top",
+          scrub: true,
+        },
+      });
+    }, heroRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
+    <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background effects */}
       <div
+        ref={bgGradientRef}
         className="absolute inset-0"
         style={{
           backgroundImage:
@@ -48,6 +85,7 @@ export default function HeroSection({ stats }: { stats: ParkingStats }) {
         }}
       />
       <div
+        ref={bgGridRef}
         className="absolute inset-0 opacity-20"
         style={{
           backgroundImage:
@@ -63,6 +101,7 @@ export default function HeroSection({ stats }: { stats: ParkingStats }) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7 }}
         >
+          {/*
           <div
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs mb-6"
             style={{
@@ -74,6 +113,7 @@ export default function HeroSection({ stats }: { stats: ParkingStats }) {
             <Wifi size={12} />
             Sistema IoT · Monitoreo en tiempo real
           </div>
+          */}
           <h1
             className="mb-6"
             style={{
@@ -115,7 +155,7 @@ export default function HeroSection({ stats }: { stats: ParkingStats }) {
             >
               <MapPin size={18} />
               Ver parqueaderos cercanos
-            </Link>            
+            </Link>
           </div>
 
           <div className="mt-10 flex items-center gap-6">

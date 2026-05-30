@@ -1,6 +1,7 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { ParkingSquare, CalendarCheck, TrendingUp, Clock, Settings } from "lucide-react";
 import EditParametersForm from "@/components/operador/EditParametersForm";
+import Tooltip from "@/components/ui/Tooltip";
 import { todayCO, tomorrowCO, fmtDateTimeCO, dbTs } from "@/lib/dates";
 
 async function getOperadorStats(email: string) {
@@ -184,20 +185,7 @@ export default async function OperadorDashboardPage() {
                   <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">
                     {card.label}
                   </span>
-                  <div className="relative group">
-                    <span
-                      className="cursor-help inline-flex items-center justify-center rounded-full text-slate-600 hover:text-slate-400 transition-colors"
-                      style={{ width: 14, height: 14, fontSize: 9, fontWeight: 700, background: "rgba(100,116,139,0.15)" }}
-                    >
-                      ?
-                    </span>
-                    <div
-                      className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 rounded-xl px-3 py-2 text-xs pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                      style={{ background: "#1e293b", color: "#94a3b8", border: "1px solid rgba(255,255,255,0.1)", lineHeight: 1.5 }}
-                    >
-                      {card.tooltip}
-                    </div>
-                  </div>
+                  <Tooltip text={card.tooltip} width="w-56" />
                 </div>
                 <div
                   className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br ${card.color}`}

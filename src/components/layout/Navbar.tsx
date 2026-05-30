@@ -17,6 +17,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import Spinner from "@/components/ui/Spinner";
 
 const ROLE_PANEL_MAP: Record<string, { href: string; label: string }> = {
   Administrador: { href: "/admin", label: "Panel Admin" },
@@ -48,9 +49,13 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [firstName, setFirstName] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [loadingPath, setLoadingPath] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const isLoading = loadingPath !== null || signingOut;
 
   useEffect(() => {
     fetch("/api/me")
@@ -65,7 +70,23 @@ export default function Navbar() {
       });
   }, [pathname]);
 
+  useEffect(() => {
+    setLoadingPath(null);
+    setSigningOut(false);
+    window.dispatchEvent(new Event("app:navigate:end"));
+  }, [pathname]);
+
+  function handleNavigate(path: string) {
+    if (isLoading) return;
+    setLoadingPath(path);
+    window.dispatchEvent(new Event("app:navigate:start"));
+    router.push(path);
+  }
+
   async function handleSignOut() {
+    if (isLoading) return;
+    setSigningOut(true);
+    window.dispatchEvent(new Event("app:navigate:start"));
     const supabase = createClient();
     await supabase.auth.signOut();
     setFirstName(null);
@@ -150,10 +171,13 @@ export default function Navbar() {
         {/* Hamburger menu */}
         <button
           onClick={() => {
-            setMenuOpen(!menuOpen);
-            setUserMenuOpen(false);
+            if (!isLoading) {
+              setMenuOpen(!menuOpen);
+              setUserMenuOpen(false);
+            }
           }}
-          className="flex items-center justify-center w-10 h-10 rounded-xl transition-all"
+          disabled={isLoading}
+          className="flex items-center justify-center w-10 h-10 rounded-xl transition-all disabled:opacity-50"
           style={{
             background: menuOpen
               ? "linear-gradient(135deg,#3b82f6,#06b6d4)"
@@ -161,7 +185,13 @@ export default function Navbar() {
             border: "1px solid rgba(255,255,255,0.1)",
           }}
         >
-          {menuOpen ? <X size={18} /> : <Menu size={18} />}
+          {isLoading ? (
+            <Spinner size={16} />
+          ) : menuOpen ? (
+            <X size={18} />
+          ) : (
+            <Menu size={18} />
+          )}
         </button>
 
         {/* Expandable Menu */}
@@ -189,67 +219,85 @@ export default function Navbar() {
                   Menú principal
                 </p>
               </div>
+
               {menuItems.map((item) => {
                 const Icon = item.icon;
+                const active = loadingPath === item.path;
                 return (
-                  <Link
+                  <button
                     key={item.id}
-                    href={item.path}
-                    onClick={() => setMenuOpen(false)}
-                    className="w-full flex items-center gap-4 px-5 py-4 text-left transition-all group hover:bg-white/5"
+                    onClick={() => handleNavigate(item.path)}
+                    disabled={isLoading}
+                    className="w-full flex items-center gap-4 px-5 py-4 text-left transition-all group hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br ${item.color}`}
                     >
-                      <Icon size={18} className="text-white" />
+                      {active ? (
+                        <Spinner size={16} />
+                      ) : (
+                        <Icon size={18} className="text-white" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p
-                        className="text-white text-sm"
-                        style={{ fontWeight: 600 }}
-                      >
+                      <p className="text-white text-sm" style={{ fontWeight: 600 }}>
                         {item.label}
                       </p>
-                      <p
-                        className="text-xs mt-0.5 truncate"
-                        style={{ color: "#64748b" }}
-                      >
-                        {item.description}
+                      <p className="text-xs mt-0.5 truncate" style={{ color: "#64748b" }}>
+                        {active ? "Cargando…" : item.description}
                       </p>
                     </div>
-                    <ChevronRight
-                      size={16}
-                      style={{ color: "#475569" }}
-                      className="group-hover:text-white transition-colors"
-                    />
-                  </Link>
+                    {active ? (
+                      <Spinner size={14} />
+                    ) : (
+                      <ChevronRight
+                        size={16}
+                        style={{ color: "#475569" }}
+                        className="group-hover:text-white transition-colors"
+                      />
+                    )}
+                  </button>
                 );
               })}
+
               {/* Panel link based on role */}
-              {role && ROLE_PANEL_MAP[role] && (
-                <Link
-                  href={ROLE_PANEL_MAP[role].href}
-                  onClick={() => setMenuOpen(false)}
-                  className="w-full flex items-center gap-4 px-5 py-4 text-left transition-all group hover:bg-white/5"
-                >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-amber-500 to-orange-500">
-                    <LayoutDashboard size={18} className="text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm" style={{ fontWeight: 600 }}>
-                      {ROLE_PANEL_MAP[role].label}
-                    </p>
-                    <p className="text-xs mt-0.5 truncate" style={{ color: "#64748b" }}>
-                      Accede a tu panel de gestión
-                    </p>
-                  </div>
-                  <ChevronRight
-                    size={16}
-                    style={{ color: "#475569" }}
-                    className="group-hover:text-white transition-colors"
-                  />
-                </Link>
-              )}
+              {role && ROLE_PANEL_MAP[role] && (() => {
+                const panel = ROLE_PANEL_MAP[role];
+                const active = loadingPath === panel.href;
+                return (
+                  <button
+                    onClick={() => handleNavigate(panel.href)}
+                    disabled={isLoading}
+                    className="w-full flex items-center gap-4 px-5 py-4 text-left transition-all group hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-amber-500 to-orange-500">
+                      {active ? (
+                        <Spinner size={16} />
+                      ) : (
+                        <LayoutDashboard size={18} className="text-white" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm" style={{ fontWeight: 600 }}>
+                        {panel.label}
+                      </p>
+                      <p className="text-xs mt-0.5 truncate" style={{ color: "#64748b" }}>
+                        {active ? "Cargando…" : "Accede a tu panel de gestión"}
+                      </p>
+                    </div>
+                    {active ? (
+                      <Spinner size={14} />
+                    ) : (
+                      <ChevronRight
+                        size={16}
+                        style={{ color: "#475569" }}
+                        className="group-hover:text-white transition-colors"
+                      />
+                    )}
+                  </button>
+                );
+              })()}
+
               <div
                 className="p-4 border-t"
                 style={{ borderColor: "rgba(255,255,255,0.07)" }}
@@ -257,7 +305,8 @@ export default function Navbar() {
                 {firstName ? (
                   <button
                     onClick={handleSignOut}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm transition-all hover:opacity-90 cursor-pointer"
+                    disabled={isLoading}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     style={{
                       background: "rgba(239,68,68,0.15)",
                       color: "#f87171",
@@ -265,23 +314,29 @@ export default function Navbar() {
                       border: "1px solid rgba(239,68,68,0.25)",
                     }}
                   >
-                    <LogOut size={15} />
-                    Cerrar sesión
+                    {signingOut ? <Spinner size={15} /> : <LogOut size={15} />}
+                    {signingOut ? "Cerrando sesión…" : "Cerrar sesión"}
                   </button>
                 ) : (
-                  <Link
-                    href="/login"
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm transition-all"
+                  <button
+                    onClick={() => handleNavigate("/login")}
+                    disabled={isLoading}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
                       background: "linear-gradient(135deg,#3b82f6,#06b6d4)",
                       color: "#fff",
                       fontWeight: 600,
                     }}
-                    onClick={() => setMenuOpen(false)}
                   >
-                    <LogIn size={15} />
-                    Iniciar sesión / Registrarse
-                  </Link>
+                    {loadingPath === "/login" ? (
+                      <Spinner size={15} />
+                    ) : (
+                      <LogIn size={15} />
+                    )}
+                    {loadingPath === "/login"
+                      ? "Cargando…"
+                      : "Iniciar sesión / Registrarse"}
+                  </button>
                 )}
               </div>
             </motion.div>
