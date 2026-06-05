@@ -76,7 +76,7 @@ export default function ParkingDetailCard({
             </p>
             <span className="text-xs flex items-center justify-center" style={{ color: "#64748b" }}>
               Puestos disponibles
-              <Tooltip text="Puestos de uso libre (no reservables) que en este momento no tienen ningún vehículo dentro." />
+              <Tooltip text="Puestos que en este momento no tienen ningún vehículo dentro." />
             </span>
           </div>
 

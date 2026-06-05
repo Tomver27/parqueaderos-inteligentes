@@ -42,9 +42,7 @@ export default async function NearbyParkingPage() {
     const spaces = p.Spaces ?? [];
 
     const availableSpots = spaces.filter(
-      (s) =>
-        !s.bookable &&
-        !s.Occupations?.some((o) => o.end_date === null),
+      (s) => !s.Occupations?.some((o) => o.end_date === null),
     ).length;
 
     const reservableSpots = spaces.filter(
